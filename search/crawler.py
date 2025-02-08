@@ -329,7 +329,7 @@ def fallback_extraction(url):
     main_content_html = doc.summary()
     soup = BeautifulSoup(main_content_html, 'html.parser')
     filtered_text = soup.get_text(separator='\n', strip=True)
-    print(filtered_text)
+    # print(filtered_text)
     return filtered_text
 
 

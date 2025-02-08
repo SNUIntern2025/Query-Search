@@ -1,5 +1,6 @@
 import search.serper as serper
 import search.crawler as crawler
+import concurrent.futures
 
 
 # query에서 processed_query를 아래 형식으로 받아왔음을 가정
@@ -29,12 +30,30 @@ def crawl_links(filtered_links, crawler):
     
     return final_results
 
+# 병렬 처리 함수
+def crawl_links_parallel(filtered_links, crawler):
+    crawled_data = {}
+    
+    def fetch_data(title, link):
+        text = crawler.crawl(link)
+        return title, text
+    
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_to_title = {executor.submit(fetch_data, title, link): title for title, link in filtered_links.items()}
+        
+        for future in concurrent.futures.as_completed(future_to_title):
+            title, text = future.result()
+            if text is not None:
+                crawled_data[title] = text
+    
+    return crawled_data
+
 def search_pipeline(processed_query):
     search_results = serper.serper_search(processed_query) # api 호출
     filtered_links = filter_link(search_results)
     print("\n\n==============Search api Result==============\n")
     print(filtered_links)
-    final_results = crawl_links(filtered_links, crawler)
+    final_results = crawl_links_parallel(filtered_links, crawler)
     print("\n\n==============Crawling Result==============\n")
     print(final_results)
 
