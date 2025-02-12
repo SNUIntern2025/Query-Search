@@ -17,7 +17,7 @@ def query_pipeline(query, tokenizer, model):
     # 서브쿼리 분해
     subqueries = get_sub_queries(query, tokenizer, model)
     print("\n\n==============Sub Querying Result (Gemma2-9B)==============\n")
-    print(get_sub_queries(subqueries, tokenizer, model))
+    print(subqueries)
 
 
     # 쿼리 라우팅
