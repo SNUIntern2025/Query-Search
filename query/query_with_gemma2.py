@@ -1,20 +1,33 @@
 import torch
 from langchain_core.output_parsers import StrOutputParser
-# from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate, FewShotChatMessagePromptTemplate
 from langchain.prompts import PromptTemplate, FewShotPromptTemplate
-# from langchain_core.prompts import PromptTemplate
-from query.subquerying_prompt import SYSTEM_FINAL_0129
+from query.subquerying_prompt import SYSTEM_GEMMA, SYSTEM_EXAONE
 from query.few_shot import examples_final
 import json
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, TextIteratorStreamer
 from langchain_huggingface import HuggingFacePipeline
-import os
 from datetime import datetime
+from my_utils import timeit
 
-# 모델 로드
 
+special_tokens = {
+    "recoilme/recoilme-gemma-2-9B-v0.4": {
+        "system_start": "<start_of_turn>system",
+        "user_start": "<start_of_turn>user",
+        "assistant_start": "<start_of_turn>model",
+        "examples_start": "<start_of_turn>example",
+        "end_token": "<end_of_turn>"
+    },
+    "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct": {
+        "system_start": "[|system|]",
+        "user_start": "[|user|]",
+        "assistant_start": "[|assistant|]",
+        "examples_start": "[|example|]",
+        "end_token": "[|endofturn|]"
+    }
+}
 
-def load_prompt(system_prompt :str, fewshot_ex=None) -> PromptTemplate:
+def load_prompt(system_prompt :str, model_name: str, fewshot_ex=None) -> PromptTemplate:
     '''
     프롬프트를 받아, LangChain의 프롬프트 클래스를 생성하여 반환하는 함수
     args:
@@ -27,14 +40,14 @@ def load_prompt(system_prompt :str, fewshot_ex=None) -> PromptTemplate:
     today = datetime.today().strftime("%Y년 %m월 %d일")
     today_prompt = f"오늘은 {today}입니다. 올해는 {datetime.today().year}년입니다. 이번 달은 {datetime.today().month}월입니다."
 
-    assistent_template = """다음 질문을 여러 개의 하위 질문으로 나누어주세요.
-    <|im_start|>user {query}<|im_end|>
-    <|im_start|>assistant
+    assistent_template = f"""다음 질문을 여러 개의 하위 질문으로 나누어주세요.
+    {special_tokens[model_name]["user_start"]} {{query}} {special_tokens[model_name]["end_token"]}
+    {special_tokens[model_name]["assistant_start"]}
     """
     
     if fewshot_ex is not None:
-        few_shot_prompt = """<|im_start|>example아래는 몇 가지 예시입니다. 아래 예시를 참고해서 답변을 작성하세요.""" \
-        + '\n'.join([f"예시 입력: {ex['input']}\n예시 출력: {ex['output']}\n" for ex in fewshot_ex]) + "<|im_end|>"
+        few_shot_prompt = f"""{special_tokens[model_name]["examples_start"]} 아래는 몇 가지 예시입니다. 아래 예시를 참고해서 답변을 작성하세요.""" \
+        + '\n'.join([f"예시 입력: {ex['input']}\n예시 출력: {ex['output']}\n" for ex in fewshot_ex]) + special_tokens[model_name]["end_token"]
         chat_prompt = PromptTemplate.from_template(today_prompt + system_prompt + few_shot_prompt + '\n\n' + assistent_template)
 
     else:
@@ -43,7 +56,8 @@ def load_prompt(system_prompt :str, fewshot_ex=None) -> PromptTemplate:
     return chat_prompt
 
 
-def get_sub_queries(query: str, tokenizer, model) -> list[str]:
+@timeit
+def get_sub_queries(query: str, llm, model_name: str) -> list[str]:
     '''
     사용자 입력을 받아, 하위 쿼리로 나누어 반환하는 함수
     args:
@@ -53,24 +67,17 @@ def get_sub_queries(query: str, tokenizer, model) -> list[str]:
     '''
 
     # 프롬프트 설정
-    chat_prompt = load_prompt(SYSTEM_FINAL_0129, examples_final)
-
-    # llm 호출
-    # MODEL_NAME = "MLP-KTLim/llama-3-Korean-Bllossom-8B"
-    # MODEL_NAME = "recoilme/recoilme-gemma-2-9B-v0.4"
-    # tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    # model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, torch_dtype=torch.bfloat16, device_map="auto", use_cache=True)
-    model.eval()
-    pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, max_new_tokens=512)
-    # LangChain의 LLM으로 Wrapping
-    llm = HuggingFacePipeline(pipeline=pipe)
+    if model_name == "recoilme/recoilme-gemma-2-9B-v0.4":
+        chat_prompt = load_prompt(SYSTEM_GEMMA, model_name, examples_final)
+    else:
+        chat_prompt = load_prompt(SYSTEM_EXAONE, model_name, examples_final)
 
     # chaining
     chain = chat_prompt | llm | StrOutputParser()
 
     # pipeline 실행
     sub_queries = chain.invoke({"query": query})
-    sub_queries = sub_queries.split("<|im_start|>assistant")[1].split("<|im_end|>")[0].strip()
+    sub_queries = sub_queries.split(special_tokens[model_name]["assistant_start"])[-1].strip()
 
     # print(sub_queries)  # for debugging
     # 답변을 json으로 저장
