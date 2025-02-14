@@ -1,5 +1,9 @@
 # Query-Search
 
+# TODO
+- Clean up `summarizer.py`
+- Implement summarizer chain properly w/ given prompt
+
 # Query Part (자세한 설명은 [여기](https://github.com/SNUIntern2025/Query-Search/tree/main/query)에)
 
 - 경로: `Query+Search_vllm/query`  안의 모든 파일들
