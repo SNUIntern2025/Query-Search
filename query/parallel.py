@@ -98,8 +98,8 @@ def prompt_routing(subqueries: List[str], llm, model_name, is_vllm):
     )
     
     all_responses = []
-    workers_num = 10 if is_vllm == 'false' else 1
-    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(subqueries), workers_num)) as executor:
+    workers_num = min(len(subqueries), 10) if is_vllm == 'false' else 1
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers_num) as executor:
         futures = {executor.submit(process_single_query, query, chain, model_name): query for query in subqueries}
         
         for future in concurrent.futures.as_completed(futures):

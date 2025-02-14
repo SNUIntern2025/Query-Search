@@ -45,6 +45,7 @@ if __name__ == '__main__':
     # MODEL_NAME = "beomi/gemma-ko-7b"
     # MODEL_NAME = "google/gemma-2-2b-it"
     MODEL_NAME = "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct"
+    # MODEL_NAME = "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct"
 
     llm = load_func(MODEL_NAME)
 
@@ -65,4 +66,4 @@ if __name__ == '__main__':
 
 
     # example_query
-    # 이번 주에 부산으로 여행을 가려는데 날씨가 괜찮을까? 또 거기서 가볼만한 곳 추천해줘
+    # 이번 주 토요일에 부산으로 여행을 가려는데 날씨가 괜찮을까? 또 거기서 가볼만한 곳 추천해줘

@@ -49,14 +49,10 @@ def load_vllm(MODEL_NAME):
 @timeit
 def query_pipeline(query, model_name, llm, is_vllm):
     # 서브쿼리 분해
-    print("==============Sub Querying Result==============")
     subqueries = get_sub_queries(query, llm, model_name)
-    print(subqueries)
-
 
     # 쿼리 라우팅
     # rule-based routing
-    print("==============Query routing Result==============")
     processed_query = []
     to_llm_subqueries = []
     for subquery in subqueries:
@@ -72,10 +68,8 @@ def query_pipeline(query, model_name, llm, is_vllm):
     for res in result:
         llm_processed_query.append({'subquery': res['subquery'], 'routing': res['routing']})
     final_processed_query = llm_processed_query + processed_query
-    
-    print(final_processed_query)
 
-    return final_processed_query
+    return subqueries, final_processed_query
 
     
 

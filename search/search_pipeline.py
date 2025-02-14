@@ -52,24 +52,24 @@ def search_pipeline(processed_query, llm, is_vllm):
     if os.environ.get('WORLD_SIZE', '1') != '1':
         dist.init_process_group(backend='nccl', world_size=1, rank=0)
 
-    print("\n\n==============Search api Result==============\n")
+    #print("\n\n==============Search api Result==============\n")
     search_results = serper.serper_search(processed_query) # api 호출
     filtered_links = filter_link(search_results)
     if dist.is_initialized():
         dist.destroy_process_group()
-    print(filtered_links)
+    #print(filtered_links)
     if dist.is_initialized():
         dist.destroy_process_group()
 
-    print("\n\n==============Crawling Result==============\n")
+    #print("\n\n==============Crawling Result==============\n")
     final_results = crawl_links_parallel(filtered_links, crawler)
-    print(final_results)
+    #print(final_results)
 
-    print("\n\n==============Summarization Result==============\n")
+    #print("\n\n==============Summarization Result==============\n")
     summarized_results = asyncio.run(summarizer.summarize(list(final_results.values()), llm, is_vllm))
     if dist.is_initialized():
         dist.destroy_process_group()
-    print(summarized_results)
+    #print(summarized_results)
     
     if dist.is_initialized():
         dist.destroy_process_group()
