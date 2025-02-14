@@ -21,7 +21,7 @@ CUDA_VISIBLE_DEVICES=0 python query_pipeline.py --vllm=true
 
 - 쿼리 라우팅을 진행하는 함수
 
-# Search Part (자세한 설명은 [여기]([https://www.notion.so/197245846c0a80bcad60d3c10dfd2812?pvs=21](https://github.com/SNUIntern2025/Query-Search/tree/main/search)에)
+# Search Part (자세한 설명은 [여기](https://github.com/SNUIntern2025/Query-Search/tree/main/search)에)
 
 - 경로: `Query+Search_vllm/search`  안의 모든 파일들
 
