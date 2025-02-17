@@ -38,7 +38,7 @@ def crawl_links_parallel(filtered_links, crawler):
     crawled_data = {}
     link_per_query = max(0, serper.k_num-2) #서브 쿼리 하나당 fetch 해올 url 개수 지정해주기
     
-    def fetch_data(title, links):
+    def fetch_data(title, link):
         try:
             text = crawler.crawl(link)
             if text:  # valid한 텍스트가 들어온 경우
