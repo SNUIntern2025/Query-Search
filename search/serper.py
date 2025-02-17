@@ -10,9 +10,10 @@ from search.config import SERPER_API_KEY
 from my_utils import timeit
 
 os.environ["SERPER_API_KEY"] = SERPER_API_KEY
+k_num = 3 # k = 검색 개수
 
 # Google Serper 비동기적 처리
-serper_search_tool = GoogleSerperAPIWrapper(k=1) # k = 검색 개수
+serper_search_tool = GoogleSerperAPIWrapper(k=k_num)
 
 async def async_serper_call(query, serper_search_tool):
     """비동기적으로 Serper Search API를 호출하는 함수"""
