@@ -13,6 +13,7 @@ import os
 from dotenv import load_dotenv
 from huggingface_hub import login
 from openai import OpenAI
+import torch.multiprocessing as mp
 
 load_dotenv()
 hf_token = os.getenv("HF_TOKEN")
@@ -54,7 +55,7 @@ def load_vllm(MODEL_NAME):
         openai_api_key= "token-snuintern2025",
         openai_api_base="http://localhost:8000/v1", # 로컬 서버에 띄워서 백엔드에서 실행하기
         model_name=MODEL_NAME,
-        max_tokens = 4096, # 모델마다 달라질 수 있음
+        max_tokens = 1024, # 모델마다 달라질 수 있음
         temperature = 0.7,
         streaming = True,
         top_p=0.85
@@ -64,7 +65,7 @@ def load_vllm(MODEL_NAME):
 
 
 if __name__ == '__main__':
-    
+
     # 명령행 인자 설정
     parser = argparse.ArgumentParser()
     parser.add_argument('--vllm', type=str, default='true', help='Using vLLM or not')

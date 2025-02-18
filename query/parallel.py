@@ -57,8 +57,8 @@ def process_single_query(query: str, chain, model_name: str) -> Dict:
     chain: LangChain chain, 사용할 체인
     '''
     try:
-        result = chain.invoke({"current_time":datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"user_input":query})
-        result = re.sub(r'```|```json|json\n', '', result)
+        result = chain.batch({"current_time":datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"user_input":query}) # batch 단위로 처리
+        result = re.sub(r'```|```json|json\n|\n    ```', '', result)
         result = result.split(special_tokens[model_name]["assistant_start"])[-1].strip()
         print(result)
         return result

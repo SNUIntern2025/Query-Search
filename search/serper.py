@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import asyncio
 from langchain_community.utilities import GoogleSerperAPIWrapper
 from langchain_core.tools import Tool
@@ -7,25 +6,16 @@ from my_utils import timeit
 import os, sys
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))) # 부모 경로 저장
-=======
-# %pip install -qU  langchain-google-community
-# %pip install -qU langchain-community
-import asyncio
-import os
 
 from langchain_community.utilities import GoogleSerperAPIWrapper
 from langchain_core.tools import Tool
-from config import SERPER_API_KEY
->>>>>>> d6fe090190900360adcc8da68c2992545b517fff
+from search.config import SERPER_API_KEY
 
 os.environ["SERPER_API_KEY"] = SERPER_API_KEY
 
 # Google Serper 비동기적 처리
-<<<<<<< HEAD
-serper_search_tool = GoogleSerperAPIWrapper(k=3) # k = 검색 개수
-=======
-serper_search_tool = GoogleSerperAPIWrapper() # k = 검색 개수
->>>>>>> d6fe090190900360adcc8da68c2992545b517fff
+k_num = 3
+serper_search_tool = GoogleSerperAPIWrapper(k=k_num) # k = 검색 개수
 
 async def async_serper_call(query, serper_search_tool):
     """비동기적으로 Serper Search API를 호출하는 함수"""
@@ -37,21 +27,13 @@ async def async_fetch_results(queries):
     results = await asyncio.gather(*tasks)  # 비동기적으로 search 작업 처리
     return results
 
-<<<<<<< HEAD
-@timeit
-=======
->>>>>>> d6fe090190900360adcc8da68c2992545b517fff
 def serper_search(examples): 
     """__main__ 환경에서 실행가능하도록 asyncio.run() 처리"""
     queries = [example["subquery"] for example in examples if example["routing"] == "web"]    
     results = asyncio.run(async_fetch_results(queries)) 
     return results
 
-<<<<<<< HEAD
 # ================================= Test ================================= #
-=======
-# -----------------------------  테스트용 코드 ----------------------------- #
->>>>>>> d6fe090190900360adcc8da68c2992545b517fff
 
 if __name__ == "__main__":
     examples = [

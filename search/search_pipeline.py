@@ -8,14 +8,11 @@ from my_utils import timeit
 
 
 def filter_link(search_results):
-    """
-    args: 
-        search_results: 정리되지 않은 검색 결과 딕셔너리
-    return:
-        links_dict: 제목과 링크를 저장한 딕셔너리
-    """
-    # 어떤 제목의 링크를 타고 들어갔는지 기억하기 위해 dictionary 사용 (title을 key, link를 value로 저장)
-    links_dict = {item['title']: item['link'] for search in search_results for item in search.get('organic', [])}
+    # 어떤 제목의 링크를 타고 들어갔는지 기억하기 위해 Link[dict] 사용 (title을 key, link를 value로 저장)
+    links_dict = []
+    for query in search_results:
+        app = {item['title']: item['link'] for item in query.get('organic', [])}
+        links_dict.append(app)
     return links_dict
 
 def crawl_links(filtered_links, crawler):
@@ -28,23 +25,34 @@ def crawl_links(filtered_links, crawler):
     
     return final_results
 
-# 병렬 처리 함수
+# 병렬 처리 함수 - 지혜(심)님 코드 반영함.
 @timeit
 def crawl_links_parallel(filtered_links, crawler):
     crawled_data = {}
+    link_per_query = max(0, serper.k_num-2) #서브 쿼리 하나당 fetch 해올 url 개수 지정해주기
     
     def fetch_data(title, link):
-        text = crawler.crawl(link)
-        return title, text
+        try:
+            text = crawler.crawl(link)
+            if text:  # valid한 텍스트가 들어온 경우
+                return title, text  
+        except Exception as e:
+            print(f"Skipping {link} due to error: {e}")
+        return None, None #에러가 난 경우 None 반환
     
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-        future_to_title = {executor.submit(fetch_data, title, link): title for title, link in filtered_links.items()}
-        
-        for future in concurrent.futures.as_completed(future_to_title):
-            title, text = future.result()
-            if text is not None:
-                crawled_data[title] = text
-    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        for query in filtered_links:
+            cnt = 0 #작동하는 페이지 개수 카운트
+            for title, link in query.items():
+                future = executor.submit(fetch_data, title, link)
+                title, text = future.result() 
+
+                if text is not None:  # 에러가 난 페이지가 아닌 경우
+                    crawled_data[title] = text
+                    cnt += 1
+                    if cnt >= link_per_query:
+                        break
+
     return crawled_data
 
 
@@ -63,12 +71,12 @@ def search_pipeline(processed_query, llm, is_vllm):
 
     print("\n\n==============Search api Result==============\n")
     search_results = serper.serper_search(processed_query) # api 호출
-    filtered_links = filter_link(search_results)
+    filtered_links = filter_link(search_results) # api 답변에서 링크와 제목 추출
 
     print(filtered_links)
 
     print("\n\n==============Crawling Result==============\n")
-    final_results = crawl_links_parallel(filtered_links, crawler)
+    final_results = crawl_links_parallel(filtered_links, crawler) # 링크에서 본문 크롤링
     # print(final_results)
 
     print("\n\n==============Summarization Result==============\n")
