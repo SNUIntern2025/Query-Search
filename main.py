@@ -28,8 +28,7 @@ def load_model(MODEL_NAME):
 
 
 def load_vllm_1(MODEL_NAME):
-    # (옵션1) Langchain에서 vLLM을 사용하는 방법: 
-    # vLLM을 백엔드 서버로 띄우고 Langchain이 그 API를 호출하는 방식
+    # (옵션1) vLLM을 백엔드 서버로 띄우고 Langchain이 그 API를 호출하는 방식
     from langchain_community.llms import VLLMOpenAI
     from openai import OpenAI
 
