@@ -1,0 +1,19 @@
+{
+  "response": [
+    {
+      "subquery": "크롤링 라이브러리 목록",
+      "routing": "none",
+      "reasoning": "크롤링 라이브러리는 특정 프로그래밍 언어에 따라 다를 수 있으며, 이는 변하지 않는 정보이므로, 외부 정보를 필요로 하지 않음"
+    },
+    {
+      "subquery": "크롤링 라이브러리 공통점",
+      "routing": "web",
+      "reasoning": "Error processing: Extra data: line 7 column 5 (char 175)"
+    },
+    {
+      "subquery": "크롤링 라이브러리 차이점",
+      "routing": "none",
+      "reasoning": "크롤링 라이브러리에 대한 정보는 변하지 않는 기술적 사실이므로, 외부 정보를 필요로 하지 않음"
+    }
+  ]
+}
