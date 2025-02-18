@@ -10,10 +10,6 @@ import os
 from my_utils import timeit
 import requests
 
-os.environ['MASTER_ADDR'] = 'localhost'  # 또는 실제 마스터 노드 IP 주소
-os.environ['MASTER_PORT'] = '12345'      # 임의의 사용하지 않는 포트
-
-
 def filter_link(search_results):
     # 어떤 제목의 링크를 타고 들어갔는지 기억하기 위해 dictionary 사용 (title을 key, link를 value로 저장)
     links_dict = []
@@ -71,26 +67,16 @@ def search_pipeline(processed_query, llm, is_vllm):
 
     print("\n\n==============Search api Result==============\n")
     search_results = serper.serper_search(processed_query) # api 호출
-    filtered_links = filter_link(search_results)
-
-    if dist.is_initialized():
-        dist.destroy_process_group()
+    filtered_links = filter_link(search_results) #api 답변에서 링크 추출
     #print(filtered_links)
-    if dist.is_initialized():
-        dist.destroy_process_group()
 
     print("\n\n==============Crawling Result==============\n")
-    final_results = crawl_links_parallel(filtered_links, crawler)
+    final_results = crawl_links_parallel(filtered_links, crawler) #추출된 링크들에서 텍스트 추출
     #print(final_results)
 
     print("\n\n==============Summarization Result==============\n")
     summarized_results = asyncio.run(summarizer.summarize(list(final_results.values()), llm, is_vllm))
-    if dist.is_initialized():
-        dist.destroy_process_group()
     #print(summarized_results)
-    
-    if dist.is_initialized():
-        dist.destroy_process_group()
     
     contexts = []
     for result in summarized_results:
@@ -120,7 +106,7 @@ if __name__ == "__main__":
                gpu_memory_utilization = 0.8, # OOM 방지
                max_num_seqs = 8, # batch size 조정
                #vllm_kwargs={"max_model_len": 5000}
-               # tensor_parallel_size = 4 # for distributed inference   
+               #tensor_parallel_size = 4 # for distributed inference   
     )
 
     summarized_results = search_pipeline(processed_query, llm, 'true')

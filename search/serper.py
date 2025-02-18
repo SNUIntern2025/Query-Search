@@ -1,5 +1,3 @@
-# %pip install -qU  langchain-google-community
-# %pip install -qU langchain-community
 import asyncio
 # 부모 경로 저장
 import os, sys
