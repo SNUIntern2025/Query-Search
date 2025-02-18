@@ -4,7 +4,7 @@ from search.search_pipeline import search_pipeline
 from langchain_huggingface import HuggingFacePipeline
 import torch
 from langchain_community.llms import VLLM
-from langchain_community.llms import VLLMOpenAI # OpenAI-Compatible Completion
+from langchain_community.llms import VLLMOpenAI # OpenAI-Compatible Completion (서버에 올릴 때 필요)
 from final_output import final_output
 import argparse
 from datetime import datetime
