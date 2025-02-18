@@ -36,11 +36,6 @@ def truncate(doc, count=1000, model_name="snunlp/bigdata_gemma2_9b_dora"):
 
 
 async def summarize(docs, llm, is_vllm, max_tokens=1000, max_concurrent_tasks=8, model_name="snunlp/bigdata_gemma2_9b_dora"):
-    os.environ["MASTER_ADDR"] = 'localhost'
-    os.environ["MASTER_PORT"] = "61413"
-    if not dist.is_initialized():
-        dist.init_process_group(backend="nccl", world_size=1, rank=0)
-        
     """HuggingFace LLM으로 비동기적 요약을 실행"""
     if not docs:
         return {}
@@ -100,10 +95,5 @@ async def summarize(docs, llm, is_vllm, max_tokens=1000, max_concurrent_tasks=8,
     
     # 비동기적으로 요약 작업을 실행합니다
     summaries = await asyncio.gather(*[summarize_task(doc) for doc in split_docs])
-    def cleanup():
-        if dist.is_initialized():
-            dist.destroy_process_group()
 
-    
-    atexit.register(cleanup)
     return contexts + summaries  # 요약된 결과를 리스트 형태로 반환합니다.
