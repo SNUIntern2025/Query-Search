@@ -1,0 +1,6 @@
+
+LANGSMITH_TRACING: true
+LANGSMITH_ENDPOINT: "https://api.smith.langchain.com"
+LANGSMITH_API_KEY: "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"
+LANGSMITH_PROJECT: "snu_DAG_agent"
+# OPENAI_API_KEY: "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"
