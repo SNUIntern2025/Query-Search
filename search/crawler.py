@@ -12,7 +12,10 @@ from bs4 import BeautifulSoup
 from readability import Document
 # 시간 측정용 라이브러리
 import time
+<<<<<<< HEAD
 from urllib.parse import urlparse
+=======
+>>>>>>> d6fe090190900360adcc8da68c2992545b517fff
 
 # ---------------------------------------
 
@@ -72,7 +75,11 @@ def handle_dbpia(url):
     """
     DBpia에서 논문 초록을 뽑아오는 함수. 
     input : url
+<<<<<<< HEAD
     return : abstract
+=======
+    output : abstract
+>>>>>>> d6fe090190900360adcc8da68c2992545b517fff
     """
     response = requests.get(url)
 
@@ -91,7 +98,11 @@ def handle_kyobo(url):
     """
     scholar_kyobo에서 논문 초록을 뽑아오는 함수
     input: url
+<<<<<<< HEAD
     return: abstract
+=======
+    output: abstract
+>>>>>>> d6fe090190900360adcc8da68c2992545b517fff
     """
     response = requests.get(url)
 
@@ -104,6 +115,7 @@ def handle_kyobo(url):
     abstract = soup.find("p", class_ = "cont_txt").text
     
     return abstract
+<<<<<<< HEAD
 
 def handle_SOF(url):
     """
@@ -309,6 +321,8 @@ def handle_naver_blog(url):
     return text
 
 
+=======
+>>>>>>> d6fe090190900360adcc8da68c2992545b517fff
     
 # --- 현재까지 main content의 위치가 파악된 사이트 모음 ---
 
@@ -317,6 +331,7 @@ KNOWN_SITE_HANDLERS = {
     r"arxiv\.org": handle_arxiv,
     r"ko\.wikipedia\.org": handle_kor_wikipedia,
     r"dbpia\.co\.kr/Journal/articleDetail\?": handle_dbpia,
+<<<<<<< HEAD
     r"scholar\.kyobobook\.co\.kr/article/detail": handle_kyobo,
     r"n\.news\.naver\.com/article" : handle_naver_news,
     r"v\.daum\.net/v" : handle_daum_news, 
@@ -324,6 +339,9 @@ KNOWN_SITE_HANDLERS = {
     r"velog\.io/" : handle_velog, 
     r"stackoverflow\.com/": handle_SOF,
     r"blog\.naver\.com": handle_naver_blog
+=======
+    r"scholar\.kyobobook\.co\.kr/article/detail": handle_kyobo
+>>>>>>> d6fe090190900360adcc8da68c2992545b517fff
 }
 
 def dispatch_known_site(url):
@@ -344,7 +362,11 @@ def fallback_extraction(url):
     main_content_html = doc.summary()
     soup = BeautifulSoup(main_content_html, 'html.parser')
     filtered_text = soup.get_text(separator='\n', strip=True)
+<<<<<<< HEAD
     # print(filtered_text)
+=======
+    print(filtered_text)
+>>>>>>> d6fe090190900360adcc8da68c2992545b517fff
     return filtered_text
 
 
@@ -352,9 +374,12 @@ def crawl(url):
     """
     실제 크롤링 함수 - 여기에 로직을 추가할 수 있음
     주헌 : google search API를 통해 받아온 url을 인자로 사용하면 될 것 같습니다
+<<<<<<< HEAD
     args:
         url: 크롤링할 웹사이트의 URL
         return: str, 크롤링한 main content
+=======
+>>>>>>> d6fe090190900360adcc8da68c2992545b517fff
     """
     # check if the URL matches any known site patterns
     result = dispatch_known_site(url)
@@ -364,7 +389,10 @@ def crawl(url):
     # fallback logic (logic2에 해당되는 경우)
     return fallback_extraction(url)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> d6fe090190900360adcc8da68c2992545b517fff
 # -------------- 테스트 코드 -------------------
 
 if __name__ == "__main__":
@@ -375,12 +403,16 @@ if __name__ == "__main__":
         "https://ko.wikipedia.org/wiki/데이터_매트릭스", #한국어 위키백과
         "https://www.dbpia.co.kr/Journal/articleDetail?nodeId=NODE11471821", # dbpia
         "https://scholar.kyobobook.co.kr/article/detail/4010038753085", # kyobo scholar
+<<<<<<< HEAD
         "https://www.yna.co.kr/view/AKR20250204076400009?section=international/all&site=topnews01", #연합뉴스 - readability fallback logic 사용해야함
         "https://stackoverflow.com/questions/79411372/getting-a-2nd-iasyncenumerator-from-the-same-iasyncenumerable-based-on"
         "https://velog.io/@boseung/velog%EA%B0%9C%EB%B0%9C%EB%B8%94%EB%A1%9C%EA%B7%B8-%EB%A7%8C%EB%93%A4%EA%B8%B0-%EA%B3%BC%EC%A0%95-%EC%82%BD%EC%A7%88%EA%B8%B0%EB%A1%9D"
         "https://augustfamily.tistory.com/108"
         "https://v.daum.net/v/20250204175018118"
         "https://n.news.naver.com/article/003/0013046572?cds=news_media_pc"
+=======
+        "https://www.yna.co.kr/view/AKR20250204076400009?section=international/all&site=topnews01"#연합뉴스 - readability fallback logic 사용해야함
+>>>>>>> d6fe090190900360adcc8da68c2992545b517fff
     ]
 
     # 런타임 시간 측정

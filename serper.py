@@ -1,57 +1,37 @@
-<<<<<<< HEAD
-import asyncio
-from langchain_community.utilities import GoogleSerperAPIWrapper
-from langchain_core.tools import Tool
-from search.config import SERPER_API_KEY
-from my_utils import timeit
-import os, sys
-
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))) # 부모 경로 저장
-=======
-# %pip install -qU  langchain-google-community
+# %pip install -qU langchain-google-community
 # %pip install -qU langchain-community
+
 import asyncio
 import os
+import pprint
 
 from langchain_community.utilities import GoogleSerperAPIWrapper
 from langchain_core.tools import Tool
-from config import SERPER_API_KEY
->>>>>>> d6fe090190900360adcc8da68c2992545b517fff
 
-os.environ["SERPER_API_KEY"] = SERPER_API_KEY
+os.environ["SERPER_API_KEY"] = "506067cc3b3c6ee2a353392fa25206f87e8431d6"
 
 # Google Serper 비동기적 처리
-<<<<<<< HEAD
-serper_search_tool = GoogleSerperAPIWrapper(k=3) # k = 검색 개수
-=======
-serper_search_tool = GoogleSerperAPIWrapper() # k = 검색 개수
->>>>>>> d6fe090190900360adcc8da68c2992545b517fff
+serper_search_tool = GoogleSerperAPIWrapper(k=5) # k = 검색 개수
 
 async def async_serper_call(query, serper_search_tool):
     """비동기적으로 Serper Search API를 호출하는 함수"""
     return await serper_search_tool.aresults(query)
 
 async def async_fetch_results(queries):
-    """비동기적 검색을 위한 작업들 생성하는 함수"""
+    # 비동기적 검색을 위한 작업들 생성
     tasks = [async_serper_call(query, serper_search_tool) for query in queries]
-    results = await asyncio.gather(*tasks)  # 비동기적으로 search 작업 처리
+    results = await asyncio.gather(*tasks)  # 모든 작업을 비동기적으로 처리
     return results
 
-<<<<<<< HEAD
-@timeit
-=======
->>>>>>> d6fe090190900360adcc8da68c2992545b517fff
-def serper_search(examples): 
-    """__main__ 환경에서 실행가능하도록 asyncio.run() 처리"""
+def serper_search(examples):
     queries = [example["subquery"] for example in examples if example["routing"] == "web"]    
     results = asyncio.run(async_fetch_results(queries)) 
-    return results
-
-<<<<<<< HEAD
-# ================================= Test ================================= #
-=======
-# -----------------------------  테스트용 코드 ----------------------------- #
->>>>>>> d6fe090190900360adcc8da68c2992545b517fff
+    # if __name__ == "__main__": 에서는 await을 직접 쓸 수 없어서 asyncio.run()을 사용해야 함
+    
+    for query, result in zip(queries, results):
+        print(f"Query: {query}")
+        pprint.pprint(result)
+        print()
 
 if __name__ == "__main__":
     examples = [
@@ -76,4 +56,5 @@ if __name__ == "__main__":
             "routing": "db"
         }
         ]
+
     serper_search(examples)
