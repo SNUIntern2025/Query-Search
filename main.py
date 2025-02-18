@@ -7,6 +7,14 @@ from langchain_community.llms import VLLM
 from final_output import final_output
 import argparse
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+from huggingface_hub import login
+
+#연구실 모델 사용을 위한 토큰 설정
+load_dotenv()
+hf_token = os.getenv("HF_TOKEN")
+login(token=hf_token)
 
 
 def load_model(MODEL_NAME):
@@ -19,19 +27,43 @@ def load_model(MODEL_NAME):
     return llm
 
 
-def load_vllm(MODEL_NAME):
+def load_vllm_1(MODEL_NAME):
+    # (옵션1) Langchain에서 vLLM을 사용하는 방법: 
+    # vLLM을 백엔드 서버로 띄우고 Langchain이 그 API를 호출하는 방식
+    from langchain_community.llms import VLLMOpenAI
+    from openai import OpenAI
+
+    client = OpenAI(
+        base_url="http://localhost:8000/v1",  # 로컬 vLLM 서버 주소
+        api_key="token-snuintern2025"
+    )
+
+    llm = VLLMOpenAI(
+        openai_api_key= "token-snuintern2025",
+        openai_api_base="http://localhost:8000/v1", # 로컬 서버에 띄워서 백엔드에서 실행하기
+        model_name=MODEL_NAME,
+        max_tokens = 1024, # 모델마다 달라질 수 있음
+        temperature = 0.7,
+        streaming = True,
+        top_p=0.85
+    )
+
+    return llm
+
+def load_vllm_2(MODEL_NAME):
+    #(옵션2) 로컬에서 모델을 사용하는 방법
     llm = VLLM(
         model=MODEL_NAME,
         trust_remote_code=True,
-        max_new_tokens=512,
         top_k=3,
         top_p=0.85,
         temperature=0.2,
         do_sample=True,
         repitition_penalty=1.2,
-        gpu_memory_utilization = 0.8,
-        vllm_kwargs={"max_model_len": 10000}
+        tensor_parallel_size=4,
+        vllm_kwargs={"max_model_len": 5000}
         )
+
     return llm
 
 
@@ -40,14 +72,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--vllm', type=str, default='true', help='Using vLLM or not')
     args = parser.parse_args()
-    load_func = load_vllm #if args.vllm == 'true' else load_model
+    #load_vllm_1 또는 load_vllm_2 선택하여 코드 수정 필요!
+    load_func = load_vllm_1 if args.vllm == 'true' else load_model
 
-    # 모델 및 환경 세팅
-    # MODEL_NAME = "recoilme/recoilme-gemma-2-9B-v0.4"
-    # MODEL_NAME = "beomi/gemma-ko-7b"
-    # MODEL_NAME = "google/gemma-2-2b-it"
-    #MODEL_NAME = "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct"
-    MODEL_NAME = "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct"
+    #사용 모델
+    MODEL_NAME = "snunlp/bigdata_gemma2_9b_dora"
 
     llm = load_func(MODEL_NAME)
 
