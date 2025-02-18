@@ -5,10 +5,7 @@ import search.summarizer as summarizer
 import asyncio
 from langchain_community.llms import VLLM
 #from vllm import LLM
-import torch.distributed as dist
-import os
 from my_utils import timeit
-import requests
 
 def filter_link(search_results):
     # 어떤 제목의 링크를 타고 들어갔는지 기억하기 위해 dictionary 사용 (title을 key, link를 value로 저장)
@@ -62,8 +59,6 @@ def crawl_links_parallel(filtered_links, crawler):
 
 @timeit
 def search_pipeline(processed_query, llm, is_vllm):   
-    if os.environ.get('WORLD_SIZE', '1') != '1':
-        dist.init_process_group(backend='nccl', world_size=1, rank=0)
 
     print("\n\n==============Search api Result==============\n")
     search_results = serper.serper_search(processed_query) # api 호출
