@@ -11,25 +11,25 @@ import argparse
 from my_utils import timeit
 
 # for not using vllm
-def load_model(MODEL_NAME):
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+# def load_model(MODEL_NAME):
+#     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
-    # for flash attention 2
-    # model = AutoModelForCausalLM.from_pretrained(
-    # MODEL_NAME, 
-    # torch_dtype=torch.float16,
-    # device_map="auto",
-    # attn_implementation="flash_attention_2",
-    # trust_remote_code=True)
+#     # for flash attention 2
+#     # model = AutoModelForCausalLM.from_pretrained(
+#     # MODEL_NAME, 
+#     # torch_dtype=torch.float16,
+#     # device_map="auto",
+#     # attn_implementation="flash_attention_2",
+#     # trust_remote_code=True)
 
-    # for vanilla
-    model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, torch_dtype=torch.bfloat16, device_map="auto", use_cache=True, trust_remote_code=True)
-    model.eval()
-    pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, max_new_tokens=512)
+#     # for vanilla
+#     model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, torch_dtype=torch.bfloat16, device_map="auto", use_cache=True, trust_remote_code=True)
+#     model.eval()
+#     pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, max_new_tokens=512)
 
-    # LangChain의 LLM으로 Wrapping
-    llm = HuggingFacePipeline(pipeline=pipe)
-    return llm
+#     # LangChain의 LLM으로 Wrapping
+#     llm = HuggingFacePipeline(pipeline=pipe)
+#     return llm
 
 
 def load_vllm(MODEL_NAME):
@@ -42,6 +42,7 @@ def load_vllm(MODEL_NAME):
         temperature=0.2,
         do_sample=True,
         repitition_penalty=1.2,
+        vllm_kwargs={"max_model_len": 10000}
         )
     return llm
 
@@ -50,6 +51,7 @@ def load_vllm(MODEL_NAME):
 def query_pipeline(query, model_name, llm, is_vllm):
     # 서브쿼리 분해
     subqueries = get_sub_queries(query, llm, model_name)
+    print("fetched sub queries")
 
     # 쿼리 라우팅
     # rule-based routing
@@ -79,7 +81,7 @@ if __name__ == '__main__':
     parser.add_argument('--vllm', type=str, default='true', help='Using vLLM or not')
     args = parser.parse_args()
 
-    load_func = load_vllm if args.vllm == 'true' else load_model
+    load_func = load_vllm #if args.vllm == 'true' else load_model
 
     # MODEL_NAME = "recoilme/recoilme-gemma-2-9B-v0.4"
     # MODEL_NAME = "beomi/gemma-ko-7b"

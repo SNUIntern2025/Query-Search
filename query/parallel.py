@@ -81,7 +81,8 @@ def prompt_routing(subqueries: List[str], llm, model_name, is_vllm):
         chat_prompt = load_prompt(PARALLEL_GEMMA, model_name)
     elif model_name == "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct":
         chat_prompt = load_prompt_exaone(PARALLEL_EXAONE, model_name, examples_routing)
-    
+    elif model_name == "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct":
+        chat_prompt = load_prompt_exaone(PARALLEL_EXAONE, model_name, examples_routing)
     # Model Selection -> 기존에 불러온 모델을 받아올 것이므로 주석 처리 하였습니다!
     # model_name = "recoilme/recoilme-gemma-2-9B-v0.4"  # Change model name!
     # tokenizer = AutoTokenizer.from_pretrained(model_name)

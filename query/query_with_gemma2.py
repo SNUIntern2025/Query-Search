@@ -24,6 +24,13 @@ special_tokens = {
         "assistant_start": "[|assistant|]",
         "examples_start": "[|example|]",
         "end_token": "[|endofturn|]"
+    }, 
+    "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct": {
+        "system_start": "[|system|]",
+        "user_start": "[|user|]",
+        "assistant_start": "[|assistant|]",
+        "examples_start": "[|example|]",
+        "end_token": "[|endofturn|]"
     }
 }
 
@@ -72,8 +79,10 @@ def get_sub_queries(query: str, llm, model_name: str) -> list[str]:
     else:
         chat_prompt = load_prompt(SYSTEM_EXAONE, model_name, examples_final)
 
+    print("prompt fetched")
     # chaining
     chain = chat_prompt | llm | StrOutputParser()
+    print("chained")
 
     # pipeline 실행
     sub_queries = chain.invoke({"query": query})

@@ -29,6 +29,8 @@ def load_vllm(MODEL_NAME):
         temperature=0.2,
         do_sample=True,
         repitition_penalty=1.2,
+        gpu_memory_utilization = 0.8,
+        vllm_kwargs={"max_model_len": 10000}
         )
     return llm
 
@@ -38,14 +40,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--vllm', type=str, default='true', help='Using vLLM or not')
     args = parser.parse_args()
-    load_func = load_vllm if args.vllm == 'true' else load_model
+    load_func = load_vllm #if args.vllm == 'true' else load_model
 
     # 모델 및 환경 세팅
     # MODEL_NAME = "recoilme/recoilme-gemma-2-9B-v0.4"
     # MODEL_NAME = "beomi/gemma-ko-7b"
     # MODEL_NAME = "google/gemma-2-2b-it"
-    MODEL_NAME = "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct"
-    # MODEL_NAME = "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct"
+    #MODEL_NAME = "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct"
+    MODEL_NAME = "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct"
 
     llm = load_func(MODEL_NAME)
 
@@ -53,7 +55,7 @@ if __name__ == '__main__':
         query = input("\n입력 >  ")
         try:
             start = datetime.now()
-            processed_query = query_pipeline(query, MODEL_NAME, llm, args.vllm)
+            _, processed_query = query_pipeline(query, MODEL_NAME, llm, args.vllm)
             search_result = search_pipeline(processed_query, llm, args.vllm)
 
             print("\n\n==============Model answer==============\n")
