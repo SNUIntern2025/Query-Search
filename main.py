@@ -83,7 +83,7 @@ if __name__ == '__main__':
         query = input("\n입력 >  ")
         try:
             start = datetime.now()
-            _, processed_query = query_pipeline(query, MODEL_NAME, llm, args.vllm)
+            _, processed_query = query_pipeline(query, llm, args.vllm)
             search_result = search_pipeline(processed_query, llm, args.vllm)
 
             print("\n\n==============Model answer==============\n")

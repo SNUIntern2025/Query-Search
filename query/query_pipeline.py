@@ -48,9 +48,19 @@ def load_vllm(MODEL_NAME):
 
 
 @timeit
-def query_pipeline(query, model_name, llm, is_vllm):
+def query_pipeline(query: str, llm, is_vllm :str) -> tuple[list, list[dict]]:
+    """
+    서브쿼리 분해와 쿼리 라우팅을 수행하는 파이프라인
+    args:
+        query: str, 입력 쿼리
+        llm: LangChain.VLLM, 사용할 llm
+        is_vllm: str, vllm 사용 여부 ("true" or "false")
+    return:
+        subqueries: list, 분해된 서브쿼리
+        final_processed_query: list[Dict], 라우팅 최종 처리된 쿼리
+    """
     # 서브쿼리 분해
-    subqueries = get_sub_queries(query, llm, model_name)
+    subqueries = get_sub_queries(query, llm)
     print("fetched sub queries")
 
     # 쿼리 라우팅
@@ -65,7 +75,7 @@ def query_pipeline(query, model_name, llm, is_vllm):
             processed_query.append({'subquery': subquery, 'routing': routing})
 
     # llm-based routing
-    result = prompt_routing(to_llm_subqueries, llm, model_name, is_vllm)
+    result = prompt_routing(to_llm_subqueries, llm, is_vllm)
     llm_processed_query = []
     for res in result:
         llm_processed_query.append({'subquery': res['subquery'], 'routing': res['routing']})
