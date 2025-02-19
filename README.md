@@ -1,4 +1,4 @@
-# DAG with AI Agents
+# 2025 겨울 인턴 프로젝트: DAG w/ Agent
 
 **Table of Contents**
 
