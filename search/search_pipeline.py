@@ -70,14 +70,10 @@ def search_pipeline(processed_query, llm, is_vllm):
     #print(final_results)
 
     print("\n\n==============Summarization Result==============\n")
-    summarized_results = asyncio.run(summarizer.summarize(list(final_results.values()), llm, is_vllm))
-    #print(summarized_results)
+    summarized_results = asyncio.run(summarizer.summarize(list(final_results.values()), llm, is_vllm, model_name=llm.model))
+    print(summarized_results)
     
-    contexts = []
-    for result in summarized_results:
-        contexts.append(result['output_text'])
-    
-    return contexts
+    return summarized_results
 
 # Test
 if __name__ == "__main__":

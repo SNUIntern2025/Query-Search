@@ -10,7 +10,11 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 from huggingface_hub import login
-import multiprocessing
+from vllm.distributed.parallel_state import destroy_model_parallel
+import gc
+import signal
+import sys
+from functools import partial
 
 #연구실 모델 사용을 위한 토큰 설정
 load_dotenv()
@@ -37,10 +41,10 @@ def load_vllm_1(MODEL_NAME):
     from langchain_community.llms import VLLMOpenAI
     from openai import OpenAI
 
-    client = OpenAI(
-        base_url="http://localhost:8000/v1",  # 로컬 vLLM 서버 주소
-        api_key="token-snuintern2025"
-    )
+    # client = OpenAI(
+    #     base_url="http://localhost:8000/v1",  # 로컬 vLLM 서버 주소
+    #     api_key="token-snuintern2025"
+    # )
 
     llm = VLLMOpenAI(
         openai_api_key= "token-snuintern2025",
@@ -57,7 +61,6 @@ def load_vllm_1(MODEL_NAME):
 def load_vllm_2(MODEL_NAME):
     #(옵션2) 로컬에서 모델을 사용하는 방법
     llm = VLLM(
-        num_workers = 1,
         model=MODEL_NAME,
         trust_remote_code=True,
         top_k=3,
@@ -65,12 +68,23 @@ def load_vllm_2(MODEL_NAME):
         temperature=0.2,
         do_sample=True,
         repitition_penalty=1.2,
-        tensor_parallel_size=4,
-        vllm_kwargs={"max_model_len": 5000}
+        tensor_parallel_size=2,
         )
 
     return llm
 
+
+# vllm 실행 중 강제 종료를 할 경우, 다음 실행 시 파일이 계속 멈춰 있는 현상 해결
+# 강제 종료 시 vllm 메모리 정리 후 gpu 반환
+def handle_exit(llm, signum, frame):
+    print(f"프로그램을 종료합니다. (Signal: {signum})")
+    # Delete the llm object and free the memory
+    destroy_model_parallel()
+    # del llm.llm_engine.model_executor.driver_worker
+    del llm # Isn't necessary for releasing memory, but why not
+    gc.collect()
+    torch.cuda.empty_cache()
+    sys.exit(0)
 
 if __name__ == '__main__':
     # 인자 설정
@@ -78,12 +92,18 @@ if __name__ == '__main__':
     parser.add_argument('--vllm', type=str, default='true', help='Using vLLM or not')
     args = parser.parse_args()
     #load_vllm_1 또는 load_vllm_2 선택하여 코드 수정 필요!
-    load_func = load_vllm_1 if args.vllm == 'true' else load_vllm_2
+    load_func = load_vllm_2 if args.vllm == 'true' else load_model
 
     #사용 모델
     MODEL_NAME = "snunlp/bigdata_gemma2_9b_dora"
 
     llm = load_func(MODEL_NAME)
+
+    # SIGINT(Ctrl+C)와 SIGTERM 처리 (강제 종료)
+    if args.vllm == 'true':
+        exit_handler = partial(handle_exit, llm)
+        signal.signal(signal.SIGINT, exit_handler)
+        signal.signal(signal.SIGTERM, exit_handler)
 
     while(True):
         query = input("\n입력 >  ")

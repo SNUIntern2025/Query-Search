@@ -12,6 +12,11 @@ import argparse
 import time
 from datetime import datetime
 from main import load_model, load_vllm_2
+from vllm.distributed.parallel_state import destroy_model_parallel
+import gc
+import signal
+import sys
+from functools import partial
 
 #전역 변수 설정
 MODEL_NAME = "snunlp/bigdata_gemma2_9b_dora"
@@ -25,6 +30,25 @@ try:
 except Exception as e:
     print(f"모델 로딩 실패: {e}")
     raise
+
+# vllm 실행 중 강제 종료를 할 경우, 다음 실행 시 파일이 계속 멈춰 있는 현상 해결
+# 강제 종료 시 vllm 메모리 정리 후 gpu 반환
+def handle_exit(llm, signum, frame):
+    print(f"프로그램을 종료합니다. (Signal: {signum})")
+    # Delete the llm object and free the memory
+    destroy_model_parallel()
+    # del llm.llm_engine.model_executor.driver_worker
+    del llm # Isn't necessary for releasing memory, but why not
+    gc.collect()
+    torch.cuda.empty_cache()
+    sys.exit(0)
+
+# SIGINT(Ctrl+C)와 SIGTERM 처리 (강제 종료)
+if args.vllm == 'true':
+    exit_handler = partial(handle_exit, llm)
+    signal.signal(signal.SIGINT, exit_handler)
+    signal.signal(signal.SIGTERM, exit_handler)
+
 
 with gr.Blocks() as demo:
     #제목 설정
@@ -59,7 +83,7 @@ with gr.Blocks() as demo:
         try:
             user_message = history[-1]['content']
 
-            subqueries, processed_query = query_pipeline(user_message, MODEL_NAME, llm, args.vllm)
+            subqueries, processed_query = query_pipeline(user_message, llm, args.vllm)
 
             #서브쿼리 결과 표시
             history.append({
