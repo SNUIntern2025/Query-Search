@@ -16,7 +16,7 @@ import signal
 import sys
 from functools import partial
 
-#연구실 모델 사용을 위한 토큰 설정
+# 연구실 모델 사용을 위한 토큰 설정
 load_dotenv()
 hf_token = os.getenv("HF_TOKEN")
 login(token=hf_token)
@@ -39,7 +39,7 @@ def load_model(MODEL_NAME):
 def load_vllm_1(MODEL_NAME):
     # (옵션1) vLLM을 백엔드 서버로 띄우고 Langchain이 그 API를 호출하는 방식
     from langchain_community.llms import VLLMOpenAI
-    from openai import OpenAI
+    # from openai import OpenAI
 
     # client = OpenAI(
     #     base_url="http://localhost:8000/v1",  # 로컬 vLLM 서버 주소
@@ -59,7 +59,7 @@ def load_vllm_1(MODEL_NAME):
     return llm
 
 def load_vllm_2(MODEL_NAME):
-    #(옵션2) 로컬에서 모델을 사용하는 방법
+    # (옵션2) 로컬에서 모델을 사용하는 방법
     llm = VLLM(
         model=MODEL_NAME,
         trust_remote_code=True,

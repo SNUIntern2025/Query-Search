@@ -84,7 +84,7 @@ def prompt_routing(subqueries: List[str], llm, is_vllm):
     subquery를 받아, LLM prompting을 통해 routing을 병렬로 실행하는 함수
     subqueries: str[], 사용자 입력을 subquery로 분해한 list
     '''
-    model_name = llm.model
+    model_name = getattr(llm, "model_name", getattr(llm, "model"))
 
     if 'gemma' in model_name:
         # parallel_index 제외한 partial 함수

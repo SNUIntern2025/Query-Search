@@ -4,7 +4,7 @@
 import requests
 # 정규식을 사용하기 위한 라이브러리
 import re
-# arvix element tree를 사용하기 위한 라이브러리
+# arxiv element tree를 사용하기 위한 라이브러리
 import xml.etree.ElementTree as ET
 # 웹페이지 파싱을 위한 라이브러리
 from bs4 import BeautifulSoup
@@ -13,7 +13,9 @@ from readability import Document
 # 시간 측정용 라이브러리
 import time
 from urllib.parse import urlparse
-
+# for trafilatura 
+import trafilatura
+import json
 # ---------------------------------------
 
 
@@ -85,6 +87,8 @@ def handle_dbpia(url):
     
     # 초록만 불러오기
     abstract = soup.find("div", class_ = "abstractTxt").text.strip()
+    if not abstract: # 주요 내용 찾지 못한 경우 fallback logic으로
+        return fallback_extraction(url)
     return abstract
 
 def handle_kyobo(url):
@@ -102,7 +106,8 @@ def handle_kyobo(url):
 
     soup = BeautifulSoup(response.text, 'html.parser')
     abstract = soup.find("p", class_ = "cont_txt").text
-    
+    if not abstract: # 주요 내용 찾지 못한 경우 fallback logic으로
+        return fallback_extraction(url)
     return abstract
 
 def handle_SOF(url):
@@ -320,18 +325,25 @@ def dispatch_known_site(url):
             return handler(url)
     return None
 
+
 def fallback_extraction(url):
     """
-    readability 라이브러리를 사용하여 main content를 추출하는 함수 (fallback logic)
+    trafilatura 라이브러리를 사용하여 main content를 추출하는 함수 (fallback logic)
     """
-    response = requests.get(url)
-    doc = Document(response.text)
-    main_content_html = doc.summary()
-    soup = BeautifulSoup(main_content_html, 'html.parser')
-    filtered_text = soup.get_text(separator='\n', strip=True)
-    # print(filtered_text)
-    return filtered_text
+    # 웹 페이지 다운로드
+    downloaded = trafilatura.fetch_url(url)
 
+    # 본문 및 메타데이터 추출
+    result = trafilatura.extract(downloaded, output_format="json", include_comments=False, include_links=False, with_metadata=True)
+
+    # JSON 문자열을 파이썬 딕셔너리로 변환
+    try:
+        parsed_result = json.loads(result)
+    except:
+        print("Error parsing JSON")
+        return None
+    # 본문 반환
+    return parsed_result['text']
 
 def crawl(url):
     """
@@ -358,11 +370,11 @@ if __name__ == "__main__":
         "https://www.dbpia.co.kr/Journal/articleDetail?nodeId=NODE11471821", # dbpia
         "https://scholar.kyobobook.co.kr/article/detail/4010038753085", # kyobo scholar
         "https://www.yna.co.kr/view/AKR20250204076400009?section=international/all&site=topnews01", #연합뉴스 - readability fallback logic 사용해야함
-        "https://stackoverflow.com/questions/79411372/getting-a-2nd-iasyncenumerator-from-the-same-iasyncenumerable-based-on"
-        "https://velog.io/@boseung/velog%EA%B0%9C%EB%B0%9C%EB%B8%94%EB%A1%9C%EA%B7%B8-%EB%A7%8C%EB%93%A4%EA%B8%B0-%EA%B3%BC%EC%A0%95-%EC%82%BD%EC%A7%88%EA%B8%B0%EB%A1%9D"
-        "https://augustfamily.tistory.com/108"
-        "https://v.daum.net/v/20250204175018118"
-        "https://n.news.naver.com/article/003/0013046572?cds=news_media_pc"
+        "https://stackoverflow.com/questions/79411372/getting-a-2nd-iasyncenumerator-from-the-same-iasyncenumerable-based-on", # stackoverflow
+        "https://velog.io/@boseung/velog%EA%B0%9C%EB%B0%9C%EB%B8%94%EB%A1%9C%EA%B7%B8-%EB%A7%8C%EB%93%A4%EA%B8%B0-%EA%B3%BC%EC%A0%95-%EC%82%BD%EC%A7%88%EA%B8%B0%EB%A1%9D", # velog
+        "https://augustfamily.tistory.com/108", # tistory
+        "https://v.daum.net/v/20250204175018118",  # daum news
+        "https://n.news.naver.com/article/003/0013046572?cds=news_media_pc", # naver news
     ]
 
     # 런타임 시간 측정

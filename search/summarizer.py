@@ -4,20 +4,12 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from langchain.prompts import PromptTemplate
 from langchain.schema import Document
 import asyncio
-<<<<<<< HEAD
-=======
-import torch.distributed as dist
-import atexit
->>>>>>> 56ca4bed2ff1a5b5494a1dd20ac76bb627d9c8ef
 from my_utils import timeit
 from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from transformers import AutoTokenizer
 from query.query_with_gemma2 import special_tokens
-<<<<<<< HEAD
 import re
-=======
->>>>>>> 56ca4bed2ff1a5b5494a1dd20ac76bb627d9c8ef
 
 system_prompt = """다음 텍스트를 읽고, 주요 아이디어와 핵심 내용을 파악하여, 간결하면서도 명확한 요약문을 작성해 주세요.
 
@@ -43,10 +35,6 @@ def truncate(doc, count=1000, model_name="snunlp/bigdata_gemma2_9b_dora"):
 
 
 async def summarize(docs, llm, is_vllm, max_tokens=1000, max_concurrent_tasks=8, model_name="snunlp/bigdata_gemma2_9b_dora"):
-    os.environ["MASTER_ADDR"] = 'localhost'
-    os.environ["MASTER_PORT"] = "61413"
-    if not dist.is_initialized():
-        dist.init_process_group(backend="nccl", world_size=1, rank=0)
         
     """HuggingFace LLM으로 비동기적 요약을 실행"""
     if not docs:
@@ -80,31 +68,16 @@ async def summarize(docs, llm, is_vllm, max_tokens=1000, max_concurrent_tasks=8,
     # vllm과의 충돌 문제 때문에, 우선 ainvoke 제외하여 실행하였습니다.
     async def summarize_task(doc):
         async with semaphore:
-<<<<<<< HEAD
             result = await chain.ainvoke({"text": doc})
             result = result.split(special_tokens[model_name]["assistant_start"])[-1].strip()
             return result
-=======
-            result = await chain.ainvoke({"text": [Document(page_content=doc)]})
-            result = result.split(special_tokens[model_name]["assistant_start"])[-1].strip()
-            print(result)
-            invoke_format = {
-                'input_documents': [Document(metadata={}, page_content=doc)], 'output_text': result
-            }
-            return invoke_format
->>>>>>> 56ca4bed2ff1a5b5494a1dd20ac76bb627d9c8ef
 
             
     # doc의 길이에 따라 문서를 처리합니다
     split_docs = []
     contexts = []
     for doc in docs:
-<<<<<<< HEAD
         shortened_doc = truncate(doc, 500, llm.model)
-=======
-        shortened_doc = truncate(doc, 500)
-        shortened_doc = doc
->>>>>>> 56ca4bed2ff1a5b5494a1dd20ac76bb627d9c8ef
         if len(shortened_doc) < 250:
             print("Summarizer: Doc added directly to context, we have saved some GPU")
             contexts.append(shortened_doc) # doc을 그대로 context에 넣습니다
@@ -118,10 +91,4 @@ async def summarize(docs, llm, is_vllm, max_tokens=1000, max_concurrent_tasks=8,
         summaries = chain.batch([{"text": doc} for doc in split_docs])
         summaries = [re.sub(r'\n', ' ', summary) for summary in summaries]
 
-<<<<<<< HEAD
     return contexts + summaries  # 요약된 결과를 리스트 형태로 반환합니다.
-=======
-    
-    atexit.register(cleanup)
-    return contexts + summaries  # 요약된 결과를 리스트 형태로 반환합니다.
->>>>>>> 56ca4bed2ff1a5b5494a1dd20ac76bb627d9c8ef

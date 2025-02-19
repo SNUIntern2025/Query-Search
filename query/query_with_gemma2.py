@@ -85,9 +85,9 @@ def get_sub_queries(query: str, llm) -> list[str]:
         sub_queries: 하위 쿼리
     '''
 
-    model_name = llm.model
+    model_name = getattr(llm, "model_name", getattr(llm, "model"))
     # 프롬프트 설정
-    if model_name == "recoilme/recoilme-gemma-2-9B-v0.4":
+    if 'gemma' in model_name:
         chat_prompt = load_prompt(SYSTEM_GEMMA, model_name, examples_final)
     else:
         chat_prompt = load_prompt(SYSTEM_EXAONE, model_name, examples_final)
