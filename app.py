@@ -14,7 +14,7 @@ from datetime import datetime
 from main import load_model, load_vllm_2
 
 #전역 변수 설정
-MODEL_NAME = "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct"
+MODEL_NAME = "snunlp/bigdata_gemma2_9b_dora"
 parser = argparse.ArgumentParser()
 parser.add_argument('--vllm', type=str, default='true', help='Using vLLM or not')
 args = parser.parse_args()

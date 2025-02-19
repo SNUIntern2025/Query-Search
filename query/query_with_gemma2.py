@@ -1,31 +1,43 @@
 import torch
 from langchain_core.output_parsers import StrOutputParser
-from langchain.prompts import PromptTemplate, FewShotPromptTemplate
+from langchain.prompts import PromptTemplate
 from query.subquerying_prompt import SYSTEM_GEMMA, SYSTEM_EXAONE
 from query.few_shot import examples_final
 import json
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, TextIteratorStreamer
-from langchain_huggingface import HuggingFacePipeline
 from datetime import datetime
 from my_utils import timeit
 
 
-special_tokens = {
-    "recoilme/recoilme-gemma-2-9B-v0.4": {
+special_tokens = {  # 채은님 코드 빌려오기
+    "snunlp/bigdata_gemma2_9b_dora": { # snunlp 모델로 변경했음.
         "system_start": "<start_of_turn>system",
         "user_start": "<start_of_turn>user",
         "assistant_start": "<start_of_turn>model",
         "examples_start": "<start_of_turn>example",
         "end_token": "<end_of_turn>"
     },
-    "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct": {
+    "snunlp/bigdata_exaone3_7.8b_fft": { # snunlp 모델로 변경했음.
         "system_start": "[|system|]",
         "user_start": "[|user|]",
         "assistant_start": "[|assistant|]",
         "examples_start": "[|example|]",
         "end_token": "[|endofturn|]"
-    }, 
-    "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct": {
+    },
+    "recoilme/recoilme-gemma-2-9B-v0.4": { # 변경 전 gemma 9B 모델
+        "system_start": "<start_of_turn>system",
+        "user_start": "<start_of_turn>user",
+        "assistant_start": "<start_of_turn>model",
+        "examples_start": "<start_of_turn>example",
+        "end_token": "<end_of_turn>"
+    },
+    "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct": { # 변경 전 EXAONE 2.4B 모델
+        "system_start": "[|system|]",
+        "user_start": "[|user|]",
+        "assistant_start": "[|assistant|]",
+        "examples_start": "[|example|]",
+        "end_token": "[|endofturn|]"
+    },
+    "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct": { # 변경 전 EXAONE 7.8B 모델
         "system_start": "[|system|]",
         "user_start": "[|user|]",
         "assistant_start": "[|assistant|]",
@@ -64,7 +76,7 @@ def load_prompt(system_prompt :str, model_name: str, fewshot_ex=None) -> PromptT
 
 
 @timeit
-def get_sub_queries(query: str, llm, model_name: str) -> list[str]:
+def get_sub_queries(query: str, llm) -> list[str]:
     '''
     사용자 입력을 받아, 하위 쿼리로 나누어 반환하는 함수
     args:
@@ -73,6 +85,7 @@ def get_sub_queries(query: str, llm, model_name: str) -> list[str]:
         sub_queries: 하위 쿼리
     '''
 
+    model_name = llm.model
     # 프롬프트 설정
     if model_name == "recoilme/recoilme-gemma-2-9B-v0.4":
         chat_prompt = load_prompt(SYSTEM_GEMMA, model_name, examples_final)
@@ -88,12 +101,7 @@ def get_sub_queries(query: str, llm, model_name: str) -> list[str]:
     sub_queries = chain.invoke({"query": query})
     sub_queries = sub_queries.split(special_tokens[model_name]["assistant_start"])[-1].strip()
 
-    # print(sub_queries)  # for debugging
-    # 답변을 json으로 저장
-    with open('sub_queries.json', 'w') as f:
-        f.write(str(sub_queries))
-    # json 파일을 읽어들여 list 형태의 subquery 저장
-    with open('sub_queries.json', 'r') as f:
-        sub_queries = json.load(f)
+    # json으로 변환
+    sub_queries = json.loads(sub_queries)
 
     return sub_queries['response']
