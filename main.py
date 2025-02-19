@@ -10,6 +10,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 from huggingface_hub import login
+import multiprocessing
 
 #연구실 모델 사용을 위한 토큰 설정
 load_dotenv()
@@ -18,6 +19,10 @@ login(token=hf_token)
 
 
 def load_model(MODEL_NAME):
+    load_dotenv()
+    hf_token = os.getenv("HF_TOKEN")
+    login(token=hf_token)
+
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, torch_dtype=torch.bfloat16, device_map="auto", use_cache=True, trust_remote_code=True)
     model.eval()
@@ -52,6 +57,7 @@ def load_vllm_1(MODEL_NAME):
 def load_vllm_2(MODEL_NAME):
     #(옵션2) 로컬에서 모델을 사용하는 방법
     llm = VLLM(
+        num_workers = 1,
         model=MODEL_NAME,
         trust_remote_code=True,
         top_k=3,
@@ -72,7 +78,7 @@ if __name__ == '__main__':
     parser.add_argument('--vllm', type=str, default='true', help='Using vLLM or not')
     args = parser.parse_args()
     #load_vllm_1 또는 load_vllm_2 선택하여 코드 수정 필요!
-    load_func = load_vllm_1 if args.vllm == 'true' else load_model
+    load_func = load_vllm_1 if args.vllm == 'true' else load_vllm_2
 
     #사용 모델
     MODEL_NAME = "snunlp/bigdata_gemma2_9b_dora"

@@ -1,3 +1,5 @@
+import multiprocessing
+multiprocessing.set_start_method('spawn', force=True)
 import gradio as gr
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from query.query_pipeline import query_pipeline
@@ -9,14 +11,14 @@ from final_output import final_output
 import argparse
 import time
 from datetime import datetime
-from main import load_model, load_vllm
+from main import load_model, load_vllm_2
 
 #전역 변수 설정
 MODEL_NAME = "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct"
 parser = argparse.ArgumentParser()
 parser.add_argument('--vllm', type=str, default='true', help='Using vLLM or not')
 args = parser.parse_args()
-load_func = load_vllm if args.vllm == 'true' else load_model
+load_func = load_vllm_2 if args.vllm == 'true' else load_model
 
 try:
     llm = load_func(MODEL_NAME)
