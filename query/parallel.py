@@ -4,12 +4,11 @@ from query.routing_prompts import *
 from query.few_shot import examples_routing
 import json
 from datetime import datetime
-import concurrent.futures
 from typing import List, Dict
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 from query.query_with_gemma2 import special_tokens
 from my_utils import timeit
 import re
+from functools import partial
 
 # from queries import SAMPLE_QUERIES
 
@@ -53,6 +52,7 @@ def load_prompt_exaone(system_prompt :str, model_name: str, fewshot_ex=None) -> 
 
 def process_single_query(query: str, chain, model_name: str) -> Dict:
     '''
+    멀티쓰레딩 작업을 batch 작업으로 변경. 따라서 이 함수는 현재 사용하지 않습니다.
     단일 쿼리를 처리하는 함수
     query: str, 처리할 단일 쿼리
     chain: LangChain chain, 사용할 체인
@@ -71,55 +71,33 @@ def process_single_query(query: str, chain, model_name: str) -> Dict:
             "reasoning": "Error processing: {str(e)}"
         }}"""
 
+# 라우팅 결과를 후처리하는 함수
+def post_process_result(model_name, text):
+    text = re.sub(r'(```|```json|json\n)', '', text)
+    text = text.split(special_tokens[model_name]["assistant_start"])[-1].strip()
+    json_result = json.loads(text)
+    return json_result
+
 @timeit
-def prompt_routing(subqueries: List[str], llm, model_name, is_vllm):
+def prompt_routing(subqueries: List[str], llm, is_vllm):
     '''
     subquery를 받아, LLM prompting을 통해 routing을 병렬로 실행하는 함수
     subqueries: str[], 사용자 입력을 subquery로 분해한 list
     '''
-    if model_name == "recoilme/recoilme-gemma-2-9B-v0.4":
-        chat_prompt = load_prompt(PARALLEL_GEMMA, model_name)
-    elif model_name == "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct":
-        chat_prompt = load_prompt_exaone(PARALLEL_EXAONE, model_name, examples_routing)
-    elif model_name == "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct":
-        chat_prompt = load_prompt_exaone(PARALLEL_EXAONE, model_name, examples_routing)
-    # Model Selection -> 기존에 불러온 모델을 받아올 것이므로 주석 처리 하였습니다!
-    # model_name = "recoilme/recoilme-gemma-2-9B-v0.4"  # Change model name!
-    # tokenizer = AutoTokenizer.from_pretrained(model_name)
-    # model = AutoModelForCausalLM.from_pretrained(model_name)
-    # terminators = [
-    # tokenizer.eos_token_id,
-    # tokenizer.convert_tokens_to_ids("<|eot_id|>")
-    # ]
+    model_name = llm.model
 
-    chain = (
-        chat_prompt
-        | llm
-        | StrOutputParser()
-    )
+    if 'gemma' in model_name:
+        # parallel_index 제외한 partial 함수
+        chat_prompt = load_prompt(PARALLEL_GEMMA, model_name)
+    elif 'EXAONE' in model_name or 'exaone' in model_name:
+        chat_prompt = load_prompt_exaone(PARALLEL_EXAONE, model_name, examples_routing)
+
+    chain = (chat_prompt 
+            | llm 
+            | StrOutputParser())
     
-    all_responses = []
-    workers_num = min(len(subqueries), 10) if is_vllm == 'false' else 1
-    with concurrent.futures.ThreadPoolExecutor(max_workers=workers_num) as executor:
-        futures = {executor.submit(process_single_query, query, chain, model_name): query for query in subqueries}
-        
-        for future in concurrent.futures.as_completed(futures):
-            query = futures[future]
-            try:
-                result = future.result()
-                json_str = result   # special token을 모델에 맞는 token으로 사용하여 json_str을 따로 추출할 필요가 없음
-                all_responses.append(json.loads(json_str))
-                print(f"Processed query: {query}")
-            except Exception as e:
-                print(f"Query '{query}' generated exception: {str(e)}")
-                all_responses.append({
-                    "subquery": query,
-                    "routing": "web",
-                    "reasoning": f"Error processing: {str(e)}"
-                })
-    
-    print("All queries processed!")
-    with open('sub_queries.json', 'w', encoding='utf-8') as f:
-        json.dump({"response": all_responses}, f, ensure_ascii=False, indent=2)
+    result = chain.batch([{"current_time":datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "user_input": query} for query in subqueries])
+    all_responses = list(map(partial(post_process_result, model_name), result))
+    print(all_responses)
     
     return all_responses

@@ -1,11 +1,9 @@
 import torch
 from langchain_core.output_parsers import StrOutputParser
-from langchain.prompts import PromptTemplate, FewShotPromptTemplate
+from langchain.prompts import PromptTemplate
 from query.subquerying_prompt import SYSTEM_GEMMA, SYSTEM_EXAONE
 from query.few_shot import examples_final
 import json
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, TextIteratorStreamer
-from langchain_huggingface import HuggingFacePipeline
 from datetime import datetime
 from my_utils import timeit
 
@@ -64,7 +62,7 @@ def load_prompt(system_prompt :str, model_name: str, fewshot_ex=None) -> PromptT
 
 
 @timeit
-def get_sub_queries(query: str, llm, model_name: str) -> list[str]:
+def get_sub_queries(query: str, llm) -> list[str]:
     '''
     사용자 입력을 받아, 하위 쿼리로 나누어 반환하는 함수
     args:
@@ -73,6 +71,7 @@ def get_sub_queries(query: str, llm, model_name: str) -> list[str]:
         sub_queries: 하위 쿼리
     '''
 
+    model_name = llm.model
     # 프롬프트 설정
     if model_name == "recoilme/recoilme-gemma-2-9B-v0.4":
         chat_prompt = load_prompt(SYSTEM_GEMMA, model_name, examples_final)
@@ -88,12 +87,7 @@ def get_sub_queries(query: str, llm, model_name: str) -> list[str]:
     sub_queries = chain.invoke({"query": query})
     sub_queries = sub_queries.split(special_tokens[model_name]["assistant_start"])[-1].strip()
 
-    # print(sub_queries)  # for debugging
-    # 답변을 json으로 저장
-    with open('sub_queries.json', 'w') as f:
-        f.write(str(sub_queries))
-    # json 파일을 읽어들여 list 형태의 subquery 저장
-    with open('sub_queries.json', 'r') as f:
-        sub_queries = json.load(f)
+    # json으로 변환
+    sub_queries = json.loads(sub_queries)
 
     return sub_queries['response']
