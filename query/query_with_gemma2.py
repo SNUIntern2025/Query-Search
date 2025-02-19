@@ -8,22 +8,36 @@ from datetime import datetime
 from my_utils import timeit
 
 
-special_tokens = {
-    "recoilme/recoilme-gemma-2-9B-v0.4": {
+special_tokens = {  # 채은님 코드 빌려오기
+    "snunlp/bigdata_gemma2_9b_dora": { # snunlp 모델로 변경했음.
         "system_start": "<start_of_turn>system",
         "user_start": "<start_of_turn>user",
         "assistant_start": "<start_of_turn>model",
         "examples_start": "<start_of_turn>example",
         "end_token": "<end_of_turn>"
     },
-    "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct": {
+    "snunlp/bigdata_exaone3_7.8b_fft": { # snunlp 모델로 변경했음.
         "system_start": "[|system|]",
         "user_start": "[|user|]",
         "assistant_start": "[|assistant|]",
         "examples_start": "[|example|]",
         "end_token": "[|endofturn|]"
-    }, 
-    "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct": {
+    },
+    "recoilme/recoilme-gemma-2-9B-v0.4": { # 변경 전 gemma 9B 모델
+        "system_start": "<start_of_turn>system",
+        "user_start": "<start_of_turn>user",
+        "assistant_start": "<start_of_turn>model",
+        "examples_start": "<start_of_turn>example",
+        "end_token": "<end_of_turn>"
+    },
+    "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct": { # 변경 전 EXAONE 2.4B 모델
+        "system_start": "[|system|]",
+        "user_start": "[|user|]",
+        "assistant_start": "[|assistant|]",
+        "examples_start": "[|example|]",
+        "end_token": "[|endofturn|]"
+    },
+    "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct": { # 변경 전 EXAONE 7.8B 모델
         "system_start": "[|system|]",
         "user_start": "[|user|]",
         "assistant_start": "[|assistant|]",
