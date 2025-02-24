@@ -72,11 +72,13 @@ def process_single_query(query: str, chain, model_name: str) -> Dict:
         }}"""
 
 # 라우팅 결과를 후처리하는 함수
-def post_process_result(model_name, text):
-    text = re.sub(r'(```|```json|json\n)', '', text)
-    text = text.split(special_tokens[model_name]["assistant_start"])[-1].strip()
-    json_result = json.loads(text)
-    return json_result
+def post_process_result(subquery, text: str) -> Dict:
+    if re.search(r'"routing"\s*:\s*"web"', text):
+        return {"subquery": subquery, "routing": "web", "reasoning": "web routing"}
+    elif re.search(r'"routing"\s*:\s*"none"', text):
+        return {"subquery": subquery, "routing": "none", "reasoning": "none routing"}
+    else:
+        return {"subquery": subquery, "routing": "web", "reasoning": "error"}
 
 @timeit
 def prompt_routing(subqueries: List[str], llm, is_vllm):
@@ -97,7 +99,6 @@ def prompt_routing(subqueries: List[str], llm, is_vllm):
             | StrOutputParser())
     
     result = chain.batch([{"current_time":datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "user_input": query} for query in subqueries])
-    all_responses = list(map(partial(post_process_result, model_name), result))
-    print(all_responses)
+    all_responses = [post_process_result(subquery, res) for subquery, res in zip (subqueries, result)]
     
     return all_responses
