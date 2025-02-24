@@ -19,6 +19,7 @@ system_prompt = """다음 텍스트를 읽고, 주요 아이디어와 핵심 내
         3. 결론 및 전달하고자 하는 메시지
 
         외부 정보를 포함하지 않고 제공된 텍스트에만 전적으로 의존하세요."""
+# 5문장 이내로 요약해 주세요. 를 포함하니까 조금 짧아지는 것 같기도 하더라구요.
 
 @timeit
 def truncate(doc, count=1000, model_name="snunlp/bigdata_gemma2_9b_dora"):
@@ -77,7 +78,8 @@ async def summarize(docs, llm, is_vllm, max_tokens=1000, max_concurrent_tasks=8,
     split_docs = []
     contexts = []
     for doc in docs:
-        shortened_doc = truncate(doc, 500, llm.model)
+        # shortened_doc = truncate(doc, 500, llm.model)
+        shortened_doc = doc[:500]
         if len(shortened_doc) < 250:
             print("Summarizer: Doc added directly to context, we have saved some GPU")
             contexts.append(shortened_doc) # doc을 그대로 context에 넣습니다

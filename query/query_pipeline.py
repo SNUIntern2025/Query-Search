@@ -62,6 +62,7 @@ def query_pipeline(query: str, llm, is_vllm :str) -> tuple[list, list[dict]]:
     # 서브쿼리 분해
     subqueries = get_sub_queries(query, llm)
     print("fetched sub queries")
+    print(subqueries)   # for debugging
 
     # 쿼리 라우팅
     # rule-based routing
@@ -80,6 +81,7 @@ def query_pipeline(query: str, llm, is_vllm :str) -> tuple[list, list[dict]]:
     for res in result:
         llm_processed_query.append({'subquery': res['subquery'], 'routing': res['routing']})
     final_processed_query = llm_processed_query + processed_query
+    print(final_processed_query)
 
     return subqueries, final_processed_query
 

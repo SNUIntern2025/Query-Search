@@ -15,6 +15,8 @@ import gc
 import signal
 import sys
 from functools import partial
+import torch.distributed as dist
+import atexit
 
 # 연구실 모델 사용을 위한 토큰 설정
 load_dotenv()
@@ -84,7 +86,14 @@ def handle_exit(llm, signum, frame):
     del llm # Isn't necessary for releasing memory, but why not
     gc.collect()
     torch.cuda.empty_cache()
+    dist.destroy_process_group()
     sys.exit(0)
+
+def normal_exit():
+    if dist.is_initialized():
+        print("Cleaning up NCCL process group...")
+        dist.destroy_process_group()
+
 
 if __name__ == '__main__':
     # 인자 설정
@@ -96,9 +105,12 @@ if __name__ == '__main__':
 
     #사용 모델
     MODEL_NAME = "snunlp/bigdata_gemma2_9b_dora"
+    # MODEL_NAME = "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct"
 
     llm = load_func(MODEL_NAME)
 
+    # 정상 종료 시 처리
+    atexit.register(normal_exit)
     # SIGINT(Ctrl+C)와 SIGTERM 처리 (강제 종료)
     if args.vllm == 'true':
         exit_handler = partial(handle_exit, llm)

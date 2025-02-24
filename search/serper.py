@@ -8,7 +8,7 @@ from search.config import SERPER_API_KEY
 from my_utils import timeit
 
 os.environ["SERPER_API_KEY"] = SERPER_API_KEY
-k_num = 3 # k = 검색 개수
+k_num = 3 # k = 검색 개수, crawl_links_parallel 함수에서 최종적으로 가져오는 개수는 k - 2개임.
 
 # Google Serper 비동기적 처리
 serper_search_tool = GoogleSerperAPIWrapper(k=k_num)

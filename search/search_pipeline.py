@@ -63,11 +63,11 @@ def search_pipeline(processed_query, llm, is_vllm):
     print("\n\n==============Search api Result==============\n")
     search_results = serper.serper_search(processed_query) # api 호출
     filtered_links = filter_link(search_results) #api 답변에서 링크 추출
-    #print(filtered_links)
+    print(filtered_links)
 
     print("\n\n==============Crawling Result==============\n")
     final_results = crawl_links_parallel(filtered_links, crawler) #추출된 링크들에서 텍스트 추출
-    #print(final_results)
+    print(final_results)
 
     print("\n\n==============Summarization Result==============\n")
     summarized_results = asyncio.run(summarizer.summarize(list(final_results.values()), llm, is_vllm, model_name=llm.model))
