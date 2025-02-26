@@ -1,23 +1,50 @@
-import search.serper as serper
+import search.serper as serper #removed search.
 import search.crawler as crawler
 import concurrent.futures
 import search.summarizer as summarizer
 import asyncio
-from search.bad_links_list import bad_links
+# from search.bad_links_list import bad_links
+from search.weather import get_weather_forecast
 from langchain_community.llms import VLLM
 #from vllm import LLM
 from my_utils import timeit
+from urllib.parse import urlparse
+from konlpy.tag import Okt
+import threading
+
+q = ""
+w = ""
+weather_links = ["weawow.com", "korea247.kr", "windy.app"] #도메인에 "weather" 안 들어간 날씨 사이트들
+lock = threading.Lock()
+
+def extract_place(subquery):
+    global q
+    global w
+    list_banned = ['날씨', '습도', '기온', '평균', '지역', '사용자', '지명', '비', '강수', '예보', '연간', '강수량']
+    if subquery != q:
+        with lock:
+            q = subquery
+            okt = Okt()
+            noun = okt.nouns(subquery)
+            for word in noun:
+                if word not in list_banned:
+                    w = word
+                    return word
+            return None
+    elif subquery == q:
+        return w
 
 def filter_link(search_results):
     # 어떤 제목의 링크를 타고 들어갔는지 기억하기 위해 dictionary 사용 (title을 key, link를 value로 저장)
     links = []
     for query in search_results:
-        app = {item['title']: item['link'] for item in query.get('organic', [])}
+        app = {query['searchParameters']['q'] + "+" + item['title']: item['link'] for item in query.get('organic', [])}
         links.append(app)
     links_dict = {}
     for link in links:
         links_dict.update(link)
     return links_dict
+
 
 def crawl_links(filtered_links, crawler):
     crawled_data = {}
@@ -31,9 +58,10 @@ def crawl_links(filtered_links, crawler):
 
 # 병렬 처리 함수
 @timeit
-def crawl_links_parallel(filtered_links, crawler):
+def crawl_links_parallel(filtered_links, crawler, processed_query):
     crawled_data = {}
-    link_per_query = max(0, serper.k_num-3) #서브 쿼리 하나당 fetch 해올 url 개수 지정해주기 - default: 2
+    weather_data = ""
+    link_per_query = max(0, serper.k_num-3) #서브 쿼리 하나당 fetch 해올 url 개수 지정해주기
     
     def fetch_data(title, link):
         try:
@@ -44,25 +72,47 @@ def crawl_links_parallel(filtered_links, crawler):
             print(f"Skipping {link} due to error: {e}")
         return None, None #에러가 난 경우 None 반환
     
+    cnt = 0
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        cnt = 0 #작동하는 페이지 개수 카운트
         for title, link in filtered_links.items():
-            for item in bad_links: # 크롤링이 어려운 링크 배제
-                if item in link:
-                    continue
+            subquery = title.split("+")[0]
+            if subquery != q: 
+                with lock:
+                    cnt = 0
 
-            future = executor.submit(fetch_data, title, link)
-            title, text = future.result() 
+            if cnt >= link_per_query:
+                continue
 
-            if text is not None:  # 에러가 난 페이지가 아닌 경우
-                print(f"Result: {title}, Length: {len(text)}")
-                crawled_data[title] = text
-                cnt += 1
-                if cnt >= link_per_query:
-                    break
+            # for item in bad_links: # 크롤링이 어려운 링크 배제
+            #     if item in link:
+            #         continue
 
-    return crawled_data
+            parsed_url = urlparse(link)
+            domain = str(parsed_url.netloc.lower())
 
+            if "weather" not in domain and "kma.go.kr" not in domain and domain not in weather_links: #날씨 관련 사이트가 아닌 경우
+                future = executor.submit(fetch_data, title, link)
+                title, text = future.result() 
+                if text is not None:  # 에러가 난 페이지가 아닌 경우
+                    print(f"Result: {title}, Length: {len(text)}")
+                    crawled_data[title] = text
+                    cnt += 1
+            
+            else: #날씨 관련 사이트인 경우
+                place_name = extract_place(subquery)
+                text = get_weather_forecast(place_name)
+                if text is None:
+                    future = executor.submit(fetch_data, title, link)
+                    title, text = future.result() 
+                    if text is not None:
+                        print(f"Result: {title}, Length: {len(text)}")
+                        crawled_data[title] = text
+                        cnt += 1
+                else:
+                    cnt += 1
+                    weather_data += text
+
+    return weather_data, crawled_data
 
 
 @timeit
@@ -71,41 +121,51 @@ def search_pipeline(processed_query, llm, is_vllm):
     print("\n\n==============Search api Result==============\n")
     search_results = serper.serper_search(processed_query) # api 호출
     filtered_links = filter_link(search_results) #api 답변에서 링크 추출
-    print(filtered_links)
 
     print("\n\n==============Crawling Result==============\n")
-    final_results = crawl_links_parallel(filtered_links, crawler) #추출된 링크들에서 텍스트 추출
-    print(final_results)
+    weather_result, final_results = crawl_links_parallel(filtered_links, crawler, processed_query) #추출된 링크들에서 텍스트 추출
 
     print("\n\n==============Summarization Result==============\n")
     summarized_results = asyncio.run(summarizer.summarize(list(final_results.values()), llm, is_vllm, model_name=llm.model))
-    print(summarized_results)
-    
+    summarized_results.append(weather_result)
     return summarized_results
 
 # Test
 if __name__ == "__main__":
     processed_query = [
     {
-        "subquery": "날아다니는 파스타 괴물",
+        "subquery": "김포 평균 기온",
         "routing": "web"
     },
     {
-        "subquery": "파스타 괴물 신화",
+        "subquery": "부산 현재 날씨",
         "routing": "web"
     }
     ]
     
-    llm = VLLM(model = "google/gemma-2-2b-it",
-               trust_remote_code = True,
-               max_new_tokens = 128,
-               top_k = 10,
-               top_p = 0.95,
-               temperature = 0.9,
-               gpu_memory_utilization = 0.8, # OOM 방지
-               max_num_seqs = 8, # batch size 조정
-               #vllm_kwargs={"max_model_len": 5000}
-               #tensor_parallel_size = 4 # for distributed inference   
+    llm = VLLM(
+        model="LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct",
+        trust_remote_code=True,
+        max_new_tokens=128,
+        # top_k=3,
+        # top_p=0.1,
+        temperature=0.9,
+        do_sample=True,
+        repitition_penalty=1.2,
+        vllm_kwargs={"max_model_len": 10000}
     )
 
+    # llm = VLLM(model = "google/gemma-2-2b-it",
+    #            trust_remote_code = True,
+    #            max_new_tokens = 128,
+    #            top_k = 10,
+    #            top_p = 0.95,
+    #            temperature = 0.9,
+    #            gpu_memory_utilization = 0.8, # OOM 방지
+    #            max_num_seqs = 8, # batch size 조정
+    #            #vllm_kwargs={"max_model_len": 5000}
+    #            #tensor_parallel_size = 4 # for distributed inference   
+    # )
+
     summarized_results = search_pipeline(processed_query, llm, 'true')
+    print(summarized_results)
