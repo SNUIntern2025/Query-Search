@@ -84,9 +84,9 @@ def handle_exit(llm, signum, frame):
     destroy_model_parallel()
     # del llm.llm_engine.model_executor.driver_worker
     del llm # Isn't necessary for releasing memory, but why not
+    dist.destroy_process_group()
     gc.collect()
     torch.cuda.empty_cache()
-    dist.destroy_process_group()
     sys.exit(0)
 
 def normal_exit():
@@ -106,6 +106,8 @@ if __name__ == '__main__':
     #사용 모델
     MODEL_NAME = "snunlp/bigdata_gemma2_9b_dora"
     # MODEL_NAME = "LGAI-EXAONE/EXAONE-3.5-2.4B-Instruct"
+    # MODEL_NAME = "snunlp/bigdata_qwen2.5_7b_dora"
+    # MODEL_NAME = "snunlp/bigdata_qwen2.5_7b_lora"
 
     llm = load_func(MODEL_NAME)
 

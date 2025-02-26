@@ -88,11 +88,10 @@ def prompt_routing(subqueries: List[str], llm, is_vllm):
     '''
     model_name = getattr(llm, "model_name", getattr(llm, "model"))
 
-    if 'gemma' in model_name:
-        # parallel_index 제외한 partial 함수
-        chat_prompt = load_prompt(PARALLEL_GEMMA, model_name)
-    elif 'EXAONE' in model_name or 'exaone' in model_name:
+    if 'EXAONE' in model_name or 'exaone' in model_name:    # 엑사원
         chat_prompt = load_prompt_exaone(PARALLEL_EXAONE, model_name, examples_routing)
+    else:   # 나머지 모델
+        chat_prompt = load_prompt(PARALLEL_GEMMA, model_name)
 
     chain = (chat_prompt 
             | llm 
