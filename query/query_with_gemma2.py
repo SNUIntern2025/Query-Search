@@ -102,6 +102,8 @@ def get_sub_queries(query: str, llm) -> list[str]:
     sub_queries = sub_queries.split(special_tokens[model_name]["assistant_start"])[-1].strip()
 
     # json으로 변환
-    sub_queries = json.loads(sub_queries)
-
-    return sub_queries['response']
+    try:
+        sub_queries = json.loads(sub_queries)
+        return sub_queries['response']
+    except:
+        return [query]
