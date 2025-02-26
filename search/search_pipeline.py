@@ -14,25 +14,36 @@ import threading
 
 q = ""
 w = ""
+d = ""
 weather_links = ["weawow.com", "korea247.kr", "windy.app"] #도메인에 "weather" 안 들어간 날씨 사이트들
 lock = threading.Lock()
 
 def extract_place(subquery):
     global q
     global w
-    list_banned = ['날씨', '습도', '기온', '평균', '지역', '사용자', '지명', '비', '강수', '예보', '연간', '강수량']
+    global d
+    list_banned = ['날씨', '습도', '기온', '평균', '지역', '사용자', '지명', '비', '강수', '예보', '연간', '강수량', \
+                   '내일', '현재', '모레', '글피', '어제', '오늘', '주간', '주말', '평일', '주중', '연휴', '아침', '저녁', \
+                    '낮', '밤', '시간', '시', '분', '초', '날', '시기', '시점', '시간대', \
+                    '이번', '지난', '저번', '다음']
+    date_word = ['내일', '현재', '모레', '글피', '어제', '오늘', '주말', '평일']
     if subquery != q:
         with lock:
             q = subquery
             okt = Okt()
             noun = okt.nouns(subquery)
+            # date_word에 해당하는 단어가 있으면 해당 단어 반환
+            for date in date_word:
+                if date in subquery:
+                    d = date
+                    break
             for word in noun:
                 if word not in list_banned:
                     w = word
-                    return word
+                    return word, d
             return None
     elif subquery == q:
-        return w
+        return w, '오늘'
 
 def filter_link(search_results):
     # 어떤 제목의 링크를 타고 들어갔는지 기억하기 위해 dictionary 사용 (title을 key, link를 value로 저장)
@@ -99,18 +110,19 @@ def crawl_links_parallel(filtered_links, crawler, processed_query):
                     cnt += 1
             
             else: #날씨 관련 사이트인 경우
-                place_name = extract_place(subquery)
-                text = get_weather_forecast(place_name)
-                if text is None:
-                    future = executor.submit(fetch_data, title, link)
-                    title, text = future.result() 
-                    if text is not None:
-                        print(f"Result: {title}, Length: {len(text)}")
-                        crawled_data[title] = text
+                if weather_data == "":  # 날씨 데이터가 없는 경우
+                    place_name, date = extract_place(subquery)
+                    text = get_weather_forecast(place_name, date)
+                    if text is None:
+                        future = executor.submit(fetch_data, title, link)
+                        title, text = future.result() 
+                        if text is not None:
+                            print(f"Result: {title}, Length: {len(text)}")
+                            crawled_data[title] = text
+                            cnt += 1
+                    else:
                         cnt += 1
-                else:
-                    cnt += 1
-                    weather_data += text
+                        weather_data += text
 
     return weather_data, crawled_data
 
