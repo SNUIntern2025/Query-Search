@@ -6,12 +6,12 @@ from query.query_with_gemma2 import special_tokens
 
 # TODO: 프롬프트 수정
 @timeit
-def final_output(query, subqueries, contexts, llm):
+def final_output(query, contexts, llm):
     model_name = getattr(llm, "model_name", getattr(llm, "model"))
     prompt = f"""{special_tokens[model_name]["system_start"]} 사용자의 질문에 답하세요.
-        {special_tokens[model_name]["user_start"]} {{query}} {special_tokens[model_name]["end_token"]}
         질문에 답할 때 아래 정보를 참고해도 됩니다:
         {{context}} {special_tokens[model_name]["end_token"]}
+        {special_tokens[model_name]["user_start"]} {{query}} {special_tokens[model_name]["end_token"]}
         {special_tokens[model_name]["assistant_start"]} """
 
     chat_prompt = PromptTemplate.from_template(prompt)
@@ -21,7 +21,7 @@ def final_output(query, subqueries, contexts, llm):
         | StrOutputParser()
     )
 
-    answer = chain.invoke({'query': query, 'context': '\n'.join(contexts)[:1500]})
+    answer = chain.invoke({'query': query, 'context': '\n- '.join(contexts)[:1500]})
 
     return answer
     
