@@ -1,7 +1,7 @@
 import torch
 from langchain_core.output_parsers import StrOutputParser
 from langchain.prompts import PromptTemplate
-from query.subquerying_prompt import SYSTEM_GEMMA, SYSTEM_EXAONE
+from query.subquerying_prompt import *
 from query.few_shot import examples_final
 import json
 from datetime import datetime
@@ -22,6 +22,20 @@ special_tokens = {  # 채은님 코드 빌려오기
         "assistant_start": "[|assistant|]",
         "examples_start": "[|example|]",
         "end_token": "[|endofturn|]"
+    },
+    "snunlp/bigdata_qwen2.5_7b_dora": { # snunlp 모델로 변경했음.
+        "system_start": "<|im_start|>system",
+        "user_start": "<|im_start|>user",
+        "assistant_start": "<|im_start|>model",
+        "examples_start": "<|im_start|>example",
+        "end_token": "<|im_end|>"
+    },
+    "snunlp/bigdata_qwen2.5_7b_lora": { # snunlp 모델로 변경했음.
+        "system_start": "<|im_start|>system",
+        "user_start": "<|im_start|>user",
+        "assistant_start": "<|im_start|>model",
+        "examples_start": "<|im_start|>example",
+        "end_token": "<|im_end|>"
     },
     "recoilme/recoilme-gemma-2-9B-v0.4": { # 변경 전 gemma 9B 모델
         "system_start": "<start_of_turn>system",
@@ -89,6 +103,8 @@ def get_sub_queries(query: str, llm) -> list[str]:
     # 프롬프트 설정
     if 'gemma' in model_name:
         chat_prompt = load_prompt(SYSTEM_GEMMA, model_name, examples_final)
+    elif 'qwen' in model_name:
+        chat_prompt = load_prompt(SYSTEM_QWEN, model_name, examples_final)
     else:
         chat_prompt = load_prompt(SYSTEM_EXAONE, model_name, examples_final)
 
@@ -102,6 +118,8 @@ def get_sub_queries(query: str, llm) -> list[str]:
     sub_queries = sub_queries.split(special_tokens[model_name]["assistant_start"])[-1].strip()
 
     # json으로 변환
-    sub_queries = json.loads(sub_queries)
-
-    return sub_queries['response']
+    try:
+        sub_queries = json.loads(sub_queries)
+        return sub_queries['response']
+    except:
+        return [query]

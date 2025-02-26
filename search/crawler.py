@@ -261,7 +261,6 @@ def handle_naver_blog(url):
     
     post_view_url = f'https://blog.naver.com/PostView.naver?blogId={blog_id}&logNo={log_no}'
     
-    # Set headers to mimic a browser request - prevents redirection to mobile site
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
         'Referer': url
@@ -272,7 +271,7 @@ def handle_naver_blog(url):
     
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    # Check for existence of a license!
+    # Check for existence of a license! - 더 나은 검색 성능을 위해 리미터를 해제하였습니다.
     license_element = soup.select_one('#post_footer_contents > div.wrap_ico_ccl')
     if license_element is not None:
         print(f"Warning: {url}: License invalid for DAG agent use")
