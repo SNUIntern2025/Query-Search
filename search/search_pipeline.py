@@ -3,16 +3,20 @@ import search.crawler as crawler
 import concurrent.futures
 import search.summarizer as summarizer
 import asyncio
+from search.bad_links_list import bad_links
 from langchain_community.llms import VLLM
 #from vllm import LLM
 from my_utils import timeit
 
 def filter_link(search_results):
     # 어떤 제목의 링크를 타고 들어갔는지 기억하기 위해 dictionary 사용 (title을 key, link를 value로 저장)
-    links_dict = []
+    links = []
     for query in search_results:
         app = {item['title']: item['link'] for item in query.get('organic', [])}
-        links_dict.append(app)
+        links.append(app)
+    links_dict = {}
+    for link in links:
+        links_dict.update(link)
     return links_dict
 
 def crawl_links(filtered_links, crawler):
@@ -29,7 +33,7 @@ def crawl_links(filtered_links, crawler):
 @timeit
 def crawl_links_parallel(filtered_links, crawler):
     crawled_data = {}
-    link_per_query = max(0, serper.k_num-2) #서브 쿼리 하나당 fetch 해올 url 개수 지정해주기
+    link_per_query = max(0, serper.k_num-3) #서브 쿼리 하나당 fetch 해올 url 개수 지정해주기 - default: 2
     
     def fetch_data(title, link):
         try:
@@ -41,17 +45,21 @@ def crawl_links_parallel(filtered_links, crawler):
         return None, None #에러가 난 경우 None 반환
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        for query in filtered_links:
-            cnt = 0 #작동하는 페이지 개수 카운트
-            for title, link in query.items():
-                future = executor.submit(fetch_data, title, link)
-                title, text = future.result() 
+        cnt = 0 #작동하는 페이지 개수 카운트
+        for title, link in filtered_links.items():
+            for item in bad_links: # 크롤링이 어려운 링크 배제
+                if item in link:
+                    continue
 
-                if text is not None:  # 에러가 난 페이지가 아닌 경우
-                    crawled_data[title] = text
-                    cnt += 1
-                    if cnt >= link_per_query:
-                        break
+            future = executor.submit(fetch_data, title, link)
+            title, text = future.result() 
+
+            if text is not None:  # 에러가 난 페이지가 아닌 경우
+                print(f"Result: {title}, Length: {len(text)}")
+                crawled_data[title] = text
+                cnt += 1
+                if cnt >= link_per_query:
+                    break
 
     return crawled_data
 
