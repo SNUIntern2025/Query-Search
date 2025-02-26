@@ -103,6 +103,8 @@ def get_sub_queries(query: str, llm) -> list[str]:
     # 프롬프트 설정
     if 'gemma' in model_name:
         chat_prompt = load_prompt(SYSTEM_GEMMA, model_name, examples_final)
+    elif 'qwen' in model_name:
+        chat_prompt = load_prompt(SYSTEM_QWEN, model_name, examples_final)
     else:
         chat_prompt = load_prompt(SYSTEM_EXAONE, model_name, examples_final)
 
