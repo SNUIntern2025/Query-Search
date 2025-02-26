@@ -66,6 +66,6 @@ async def summarize(docs, llm, is_vllm, max_tokens=1500, max_concurrent_tasks=8,
         summaries = await asyncio.gather(*[summarize_task(doc) for doc in split_docs])
     else:   # vllm일 경우 비동기를 제거하고 batch 단위로 함수를 실행합니다.
         summaries = chain.batch([{"text": doc} for doc in split_docs])
-        summaries = [re.sub(r'\n', ' ', summary) for summary in summaries]
+        summaries = [re.sub(r'\n', '', summary) for summary in summaries]
 
     return contexts + summaries  # 요약된 결과를 리스트 형태로 반환합니다.
