@@ -15,7 +15,7 @@ async def summarize(docs, llm, is_vllm, max_tokens=1500, max_concurrent_tasks=8,
         
     """HuggingFace LLM으로 비동기적 요약을 실행"""
     if not docs:
-        return {}
+        return []
     summary_length = max_tokens / len(docs)
 
     system_prompt = f"""다음 텍스트를 읽고, {max(int(summary_length/40), 5)}문장 이내로 요약해주세요.
