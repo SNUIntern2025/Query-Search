@@ -102,7 +102,7 @@ def crawl_links_parallel(filtered_links, crawler, processed_query):
             if cnt >= link_per_query:
                 continue
             
-            # bad links는 크롤링에서 제외
+            # bad links는 크롤링에서 제외 (indent 수정)
             skip = False
             for item in bad_links:
                 if item in link:
@@ -117,8 +117,10 @@ def crawl_links_parallel(filtered_links, crawler, processed_query):
 
             if "weather" not in domain and "kma.go.kr" not in domain and domain not in weather_links: # 날씨 관련 사이트가 아닌 경우
                 future = executor.submit(fetch_data, title, link)
-                title, text = future.result() 
-                if text is not None:  # 에러가 난 페이지가 아닌 경우
+                title, text = future.result()
+                if text is None: # 에러가 난 페이지의 경우 cnt 수 업데이트 하지 않도록 함 (채은)
+                    continue
+                else:  # 에러가 난 페이지가 아닌 경우
                     print(f"Result: {title}, Length: {len(text)}")
                     crawled_data[title] = text
                     cnt += 1
