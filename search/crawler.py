@@ -73,8 +73,6 @@ def handle_kor_wikipedia(url):
 def handle_dbpia(url):
     """
     DBpia에서 논문 초록을 뽑아오는 함수. 
-    input : url
-    output : abstract
     """
     response = requests.get(url)
 
@@ -94,8 +92,6 @@ def handle_dbpia(url):
 def handle_kyobo(url):
     """
     scholar_kyobo에서 논문 초록을 뽑아오는 함수
-    input: url
-    output: abstract
     """
     response = requests.get(url)
 
@@ -347,7 +343,6 @@ def fallback_extraction(url):
 def crawl(url):
     """
     실제 크롤링 함수 - 여기에 로직을 추가할 수 있음
-    주헌 : google search API를 통해 받아온 url을 인자로 사용하면 될 것 같습니다
     """
     # check if the URL matches any known site patterns
     result = dispatch_known_site(url)

@@ -1,4 +1,4 @@
-import search.serper as serper #removed search.
+import search.serper as serper # removed search.
 import search.crawler as crawler
 import concurrent.futures
 import search.summarizer as summarizer
@@ -6,7 +6,7 @@ import asyncio
 from search.bad_links_list import bad_links
 from search.weather import get_weather_forecast
 from langchain_community.llms import VLLM
-#from vllm import LLM
+# from vllm import LLM
 from my_utils import timeit
 from urllib.parse import urlparse
 from konlpy.tag import Okt
@@ -15,7 +15,7 @@ import threading
 q = ""
 w = ""
 d = ""
-weather_links = ["weawow.com", "korea247.kr", "windy.app"] #도메인에 "weather" 안 들어간 날씨 사이트들
+weather_links = ["weawow.com", "korea247.kr", "windy.app"] # 도메인에 "weather" 안 들어간 날씨 사이트들
 lock = threading.Lock()
 
 def extract_place(subquery, flag):
@@ -101,7 +101,8 @@ def crawl_links_parallel(filtered_links, crawler, processed_query):
 
             if cnt >= link_per_query:
                 continue
-
+            
+            # bad links는 크롤링에서 제외
             skip = False
             for item in bad_links:
                 if item in link:
@@ -114,7 +115,7 @@ def crawl_links_parallel(filtered_links, crawler, processed_query):
             parsed_url = urlparse(link)
             domain = str(parsed_url.netloc.lower())
 
-            if "weather" not in domain and "kma.go.kr" not in domain and domain not in weather_links: #날씨 관련 사이트가 아닌 경우
+            if "weather" not in domain and "kma.go.kr" not in domain and domain not in weather_links: # 날씨 관련 사이트가 아닌 경우
                 future = executor.submit(fetch_data, title, link)
                 title, text = future.result() 
                 if text is not None:  # 에러가 난 페이지가 아닌 경우
@@ -122,7 +123,7 @@ def crawl_links_parallel(filtered_links, crawler, processed_query):
                     crawled_data[title] = text
                     cnt += 1
             
-            else: #날씨 관련 사이트인 경우
+            else: # 날씨 관련 사이트인 경우
                 if weather_data == "":  # 날씨 데이터가 없는 경우
                     place_name, date = extract_place(subquery, flag)
                     text = get_weather_forecast(place_name, date)
@@ -145,10 +146,10 @@ def search_pipeline(processed_query, llm, is_vllm):
 
     print("\n\n==============Search api Result==============\n")
     search_results = serper.serper_search(processed_query) # api 호출
-    filtered_links = filter_link(search_results) #api 답변에서 링크 추출
+    filtered_links = filter_link(search_results) # api 답변에서 링크 추출
 
     print("\n\n==============Crawling Result==============\n")
-    weather_result, final_results = crawl_links_parallel(filtered_links, crawler, processed_query) #추출된 링크들에서 텍스트 추출
+    weather_result, final_results = crawl_links_parallel(filtered_links, crawler, processed_query) # 추출된 링크들에서 텍스트 추출
 
     print("\n\n==============Summarization Result==============\n")
     
