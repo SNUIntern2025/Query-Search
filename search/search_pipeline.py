@@ -8,7 +8,7 @@ from my_utils import timeit
 
 
 def filter_link(search_results):
-    # 어떤 제목의 링크를 타고 들어갔는지 기억하기 위해 Link[dict] 사용 (title을 key, link를 value로 저장)
+    # 어떤 제목의 링크를 타고 들어갔는지 기억하기 위해 List[dict] 사용 (title을 key, link를 value로 저장)
     links_dict = []
     for query in search_results:
         app = {item['title']: item['link'] for item in query.get('organic', [])}

@@ -3,6 +3,7 @@ from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from my_utils import timeit
 from query.query_with_gemma2 import special_tokens
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 @timeit
 def final_output(query, contexts, llm):
