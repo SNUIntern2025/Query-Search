@@ -146,7 +146,13 @@ def search_pipeline(processed_query, llm, is_vllm):
     weather_result, final_results = crawl_links_parallel(filtered_links, crawler, processed_query) #추출된 링크들에서 텍스트 추출
 
     print("\n\n==============Summarization Result==============\n")
-    summarized_results = asyncio.run(summarizer.summarize(list(final_results.values()), llm, is_vllm, model_name=llm.model))
+    
+    if hasattr(llm, "model_name"):
+        model_name = llm.model_name
+    else:
+        model_name = llm.model
+        
+    summarized_results = asyncio.run(summarizer.summarize(list(final_results.values()), llm, is_vllm, model_name=model_name))
     summarized_results.append(weather_result)
     return summarized_results
 

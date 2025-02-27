@@ -86,7 +86,10 @@ def prompt_routing(subqueries: List[str], llm, is_vllm):
     subquery를 받아, LLM prompting을 통해 routing을 병렬로 실행하는 함수
     subqueries: str[], 사용자 입력을 subquery로 분해한 list
     '''
-    model_name = getattr(llm, "model_name", getattr(llm, "model"))
+    if hasattr(llm, "model_name"):
+        model_name = llm.model_name
+    else:
+        model_name = llm.model
 
     if 'EXAONE' in model_name or 'exaone' in model_name:    # 엑사원
         chat_prompt = load_prompt_exaone(PARALLEL_EXAONE, model_name, examples_routing)

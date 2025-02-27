@@ -99,7 +99,11 @@ def get_sub_queries(query: str, llm) -> list[str]:
         sub_queries: 하위 쿼리
     '''
 
-    model_name = getattr(llm, "model_name", getattr(llm, "model"))
+    if hasattr(llm, "model_name"):
+        model_name = llm.model_name
+    else:
+        model_name = llm.model
+        
     # 프롬프트 설정
     if 'gemma' in model_name:
         chat_prompt = load_prompt(SYSTEM_GEMMA, model_name, examples_final)
