@@ -102,9 +102,14 @@ def crawl_links_parallel(filtered_links, crawler, processed_query):
             if cnt >= link_per_query:
                 continue
 
-            for item in bad_links: # 크롤링이 어려운 링크 배제
+            skip = False
+            for item in bad_links:
                 if item in link:
-                    continue
+                    skip = True
+                    break  # bad_links 중 하나라도 포함되면 건너뛰기
+
+            if skip:
+                continue  # bad_links에 포함된 경우 다음 링크로 넘어감
 
             parsed_url = urlparse(link)
             domain = str(parsed_url.netloc.lower())

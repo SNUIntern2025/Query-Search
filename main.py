@@ -41,12 +41,6 @@ def load_model(MODEL_NAME):
 def load_vllm_1(MODEL_NAME):
     # (옵션1) vLLM을 백엔드 서버로 띄우고 Langchain이 그 API를 호출하는 방식
     from langchain_community.llms import VLLMOpenAI
-    # from openai import OpenAI
-
-    # client = OpenAI(
-    #     base_url="http://localhost:8000/v1",  # 로컬 vLLM 서버 주소
-    #     api_key="token-snuintern2025"
-    # )
 
     llm = VLLMOpenAI(
         openai_api_key= "token-snuintern2025",
@@ -54,7 +48,6 @@ def load_vllm_1(MODEL_NAME):
         model_name=MODEL_NAME,
         max_tokens = 1024, # 모델마다 달라질 수 있음
         temperature = 0.7,
-        streaming = True,
         top_p=0.85
     )
 
