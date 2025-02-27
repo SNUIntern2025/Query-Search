@@ -39,6 +39,8 @@ def extract_place(subquery):
                 if date in subquery:
                     d = date
                     break
+            if d == "":
+                d = '오늘'
             for word in noun:
                 if word not in list_banned:
                     w = word
