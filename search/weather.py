@@ -43,6 +43,8 @@ def translate_data(location, data, forcast_day):
 
 # ['내일', '현재', '모레', '글피', '어제', '오늘', '주말', '평일']
 def get_weather_forecast(location, date='오늘'):
+    weekday_list = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일']
+
     # 현재 시각이 23시 이전이면 어제 날짜
     if datetime.now().hour < 23:
         today = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
@@ -72,6 +74,15 @@ def get_weather_forecast(location, date='오늘'):
         else:
             # 다음 평일로 이동
             forcast_day = (datetime.now() + timedelta(days=(7-weekday))).strftime("%Y%m%d")
+    elif date in weekday_list:
+        # date가 weekday_list의 몇 번째 index인지 찾기
+        target_weekday = weekday_list.index(date)
+        # 현재 요일 조회
+        weekday = datetime.now().weekday()
+        # 다음 해당 요일로 이동
+        if target_weekday < weekday:
+            target_weekday += 7
+        forcast_day = (datetime.now() + timedelta(days=(target_weekday-weekday))).strftime("%Y%m%d")
     else:
         forcast_day = today
 
