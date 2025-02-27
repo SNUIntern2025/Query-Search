@@ -120,6 +120,6 @@ def get_sub_queries(query: str, llm) -> list[str]:
     # json으로 변환
     try:
         sub_queries = json.loads(sub_queries)
-        return sub_queries['response']
+        return sub_queries['response'] + [query]
     except:
         return [query]
