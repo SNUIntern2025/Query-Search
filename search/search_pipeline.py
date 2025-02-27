@@ -3,7 +3,7 @@ import search.crawler as crawler
 import concurrent.futures
 import search.summarizer as summarizer
 import asyncio
-# from search.bad_links_list import bad_links
+from search.bad_links_list import bad_links
 from search.weather import get_weather_forecast
 from langchain_community.llms import VLLM
 #from vllm import LLM
@@ -102,9 +102,9 @@ def crawl_links_parallel(filtered_links, crawler, processed_query):
             if cnt >= link_per_query:
                 continue
 
-            # for item in bad_links: # 크롤링이 어려운 링크 배제
-            #     if item in link:
-            #         continue
+            for item in bad_links: # 크롤링이 어려운 링크 배제
+                if item in link:
+                    continue
 
             parsed_url = urlparse(link)
             domain = str(parsed_url.netloc.lower())
