@@ -18,7 +18,7 @@ d = ""
 weather_links = ["weawow.com", "korea247.kr", "windy.app"] #도메인에 "weather" 안 들어간 날씨 사이트들
 lock = threading.Lock()
 
-def extract_place(subquery):
+def extract_place(subquery, flag):
     global q
     global w
     global d
@@ -29,7 +29,7 @@ def extract_place(subquery):
                     '이번', '지난', '저번', '다음']
     date_word = ['내일', '현재', '모레', '글피', '어제', '오늘', '주말', '평일', \
                  '월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일']
-    if subquery != q:
+    if flag:
         with lock:
             q = subquery
             okt = Okt()
@@ -74,6 +74,7 @@ def crawl_links(filtered_links, crawler):
 # 병렬 처리 함수
 @timeit
 def crawl_links_parallel(filtered_links, crawler, processed_query):
+    global q
     crawled_data = {}
     weather_data = ""
     link_per_query = max(0, serper.k_num-3) #서브 쿼리 하나당 fetch 해올 url 개수 지정해주기
@@ -91,8 +92,11 @@ def crawl_links_parallel(filtered_links, crawler, processed_query):
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         for title, link in filtered_links.items():
             subquery = title.split("+")[0]
+            flag = False
             if subquery != q: 
                 with lock:
+                    flag = True
+                    q = subquery
                     cnt = 0
 
             if cnt >= link_per_query:
@@ -115,7 +119,7 @@ def crawl_links_parallel(filtered_links, crawler, processed_query):
             
             else: #날씨 관련 사이트인 경우
                 if weather_data == "":  # 날씨 데이터가 없는 경우
-                    place_name, date = extract_place(subquery)
+                    place_name, date = extract_place(subquery, flag)
                     text = get_weather_forecast(place_name, date)
                     if text is None:
                         future = executor.submit(fetch_data, title, link)
