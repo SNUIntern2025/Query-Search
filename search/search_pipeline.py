@@ -46,7 +46,7 @@ def extract_place(subquery, flag):
                     w = word
                     return word, d
             return None
-    elif subquery == q:
+    else:
         return w, '오늘'
 
 def filter_link(search_results):
