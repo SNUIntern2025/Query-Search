@@ -45,7 +45,7 @@ def extract_place(subquery, flag):
                 if word not in list_banned:
                     w = word
                     return word, d
-            return None
+            return None, None
     else:
         return w, '오늘'
 
