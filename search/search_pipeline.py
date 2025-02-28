@@ -45,8 +45,8 @@ def extract_place(subquery, flag):
                 if word not in list_banned:
                     w = word
                     return word, d
-            return None
-    elif subquery == q:
+            return None, None
+    else:
         return w, '오늘'
 
 def filter_link(search_results):
@@ -63,7 +63,7 @@ def filter_link(search_results):
 
 # 병렬 처리 함수
 @timeit
-def crawl_links_parallel(filtered_links, crawler, processed_query):
+def crawl_links_parallel(filtered_links, crawler):
     global q
     crawled_data = {}
     weather_data = ""
@@ -141,7 +141,7 @@ def search_pipeline(processed_query, llm, is_vllm):
     filtered_links = filter_link(search_results) # api 답변에서 링크 추출
 
     print("\n\n==============Crawling Result==============\n")
-    weather_result, final_results = crawl_links_parallel(filtered_links, crawler, processed_query) # 추출된 링크들에서 텍스트 추출
+    weather_result, final_results = crawl_links_parallel(filtered_links, crawler) # 추출된 링크들에서 텍스트 추출
 
     print("\n\n==============Summarization Result==============\n")
     
@@ -158,11 +158,11 @@ def search_pipeline(processed_query, llm, is_vllm):
 if __name__ == "__main__":
     processed_query = [
     {
-        "subquery": "김포 평균 기온",
+        "subquery": "날아다니는 파스타 괴물",
         "routing": "web"
     },
     {
-        "subquery": "부산 현재 날씨",
+        "subquery": "파스타 괴물 신화",
         "routing": "web"
     }
     ]
