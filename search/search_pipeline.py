@@ -168,11 +168,11 @@ def search_pipeline(processed_query, llm, is_vllm):
 if __name__ == "__main__":
     processed_query = [
     {
-        "subquery": "김포 평균 기온",
+        "subquery": "날아다니는 파스타 괴물",
         "routing": "web"
     },
     {
-        "subquery": "부산 현재 날씨",
+        "subquery": "파스타 괴물 신화",
         "routing": "web"
     }
     ]
