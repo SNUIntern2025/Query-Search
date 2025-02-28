@@ -143,15 +143,19 @@ Final Output
     >     final_processed_query (list[Dict]): 서브쿼리 라우팅 결과
     > 
     - 예시
-        
+      
         ```python
-        query = "피크민이 뭐야?"
-        query_pipeline(query, llm, args.vllm)
+        prompt_routing(["피크민의 정의", "피크민의 특징"], llm, is_vllm)
         
-        >> ["피크민의 정의, 피크민의 특징"],
-           [{"subquery": "피크민의 정의", "routing": "web"},
-            {"subquery": "피크민의 특징", "routing": "web"}]
+        >> [{"subquery": "피크민의 정의",
+            "reasoning": "피크민의 정의를 알려면 외부 정보가 필요합니다.",
+            "routing": "web"},
+            {"subquery": "피크민의 특징",
+            "reasoning": "피크민의 특징을 알려면 외부 정보가 필요합니다.",
+            "routing": "web"}]
         ```
+
+        
         
 
 - **`load_model` , `load_vllm`**
