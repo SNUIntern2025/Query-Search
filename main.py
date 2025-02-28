@@ -5,7 +5,6 @@ from langchain_huggingface import HuggingFacePipeline
 import torch
 from langchain_community.llms import VLLM
 from final_output import final_output
-import argparse
 from datetime import datetime
 import os
 from dotenv import load_dotenv
@@ -22,20 +21,6 @@ import atexit
 load_dotenv()
 hf_token = os.getenv("HF_TOKEN")
 login(token=hf_token)
-
-
-def load_model(MODEL_NAME):
-    load_dotenv()
-    hf_token = os.getenv("HF_TOKEN")
-    login(token=hf_token)
-
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, torch_dtype=torch.bfloat16, device_map="auto", use_cache=True, trust_remote_code=True)
-    model.eval()
-    pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, max_new_tokens=512)
-    # LangChain의 LLM으로 Wrapping
-    llm = HuggingFacePipeline(pipeline=pipe)
-    return llm
 
 
 def load_vllm_1(MODEL_NAME):
@@ -75,7 +60,6 @@ def handle_exit(llm, signum, frame):
     print(f"프로그램을 종료합니다. (Signal: {signum})")
     # Delete the llm object and free the memory
     destroy_model_parallel()
-    # del llm.llm_engine.model_executor.driver_worker
     del llm # Isn't necessary for releasing memory, but why not
     dist.destroy_process_group()
     gc.collect()
@@ -90,11 +74,8 @@ def normal_exit():
 
 if __name__ == '__main__':
     # 인자 설정
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--vllm', type=str, default='true', help='Using vLLM or not')
-    args = parser.parse_args()
     #load_vllm_1 또는 load_vllm_2 선택하여 코드 수정 필요!
-    load_func = load_vllm_2 if args.vllm == 'true' else load_model
+    load_func = load_vllm_2
 
     #사용 모델
     MODEL_NAME = "snunlp/bigdata_gemma2_9b_dora"
@@ -107,17 +88,16 @@ if __name__ == '__main__':
     # 정상 종료 시 처리
     atexit.register(normal_exit)
     # SIGINT(Ctrl+C)와 SIGTERM 처리 (강제 종료)
-    if args.vllm == 'true':
-        exit_handler = partial(handle_exit, llm)
-        signal.signal(signal.SIGINT, exit_handler)
-        signal.signal(signal.SIGTERM, exit_handler)
+    exit_handler = partial(handle_exit, llm)
+    signal.signal(signal.SIGINT, exit_handler)
+    signal.signal(signal.SIGTERM, exit_handler)
 
     while(True):
         query = input("\n입력 >  ")
         try:
             start = datetime.now()
-            _, processed_query = query_pipeline(query, llm, args.vllm)
-            search_result = search_pipeline(processed_query, llm, args.vllm)
+            _, processed_query = query_pipeline(query, llm)
+            search_result = search_pipeline(processed_query, llm)
 
             print("\n\n==============Model answer==============\n")
             answer = final_output(query, search_result, llm)

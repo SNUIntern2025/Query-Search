@@ -59,7 +59,7 @@ def post_process_result(subquery, text: str) -> Dict:
     else:
         return {"subquery": subquery, "routing": "web", "reasoning": "error"}
 
-def prompt_routing(subqueries: List[str], llm, is_vllm):
+def prompt_routing(subqueries: List[str], llm):
     '''
     subquery를 받아, LLM prompting을 통해 routing을 병렬로 실행하는 함수
     subqueries: str[], 사용자 입력을 subquery로 분해한 list

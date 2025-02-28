@@ -11,7 +11,7 @@ from transformers import AutoTokenizer
 from query.query_with_gemma2 import special_tokens
 import re
 
-async def summarize(docs, llm, is_vllm, model_name="snunlp/bigdata_gemma2_9b_dora"):
+async def summarize(docs, llm, model_name="snunlp/bigdata_gemma2_9b_dora"):
     """HuggingFace LLM으로 비동기적 요약을 실행"""
     if not docs:
         return []
@@ -63,10 +63,8 @@ async def summarize(docs, llm, is_vllm, model_name="snunlp/bigdata_gemma2_9b_dor
             print("Summarizer: Doc added to summarizer")
             split_docs.append(shortened_doc) # doc의 첫 n개 토큰을 요약할 문서 리스트에 넣습니다
     
-    if is_vllm == 'false':  # vllm이 아닐 경우, 비동기적으로 요약 작업을 실행합니다
-        summaries = await asyncio.gather(*[summarize_task(doc) for doc in split_docs])
-    else:   # vllm일 경우 비동기를 제거하고 batch 단위로 함수를 실행합니다.
-        summaries = chain.batch([{"text": doc} for doc in split_docs])
-        summaries = [re.sub(r'\n', '', summary) for summary in summaries]
+    # 비동기를 제거하고 batch 단위로 함수를 실행합니다.
+    summaries = chain.batch([{"text": doc} for doc in split_docs])
+    summaries = [re.sub(r'\n', '', summary) for summary in summaries]
 
     return contexts + summaries  # 요약된 결과를 리스트 형태로 반환합니다.
