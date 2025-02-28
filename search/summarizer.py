@@ -11,11 +11,12 @@ from transformers import AutoTokenizer
 from query.query_with_gemma2 import special_tokens
 import re
 
-async def summarize(docs, llm, is_vllm, max_tokens=1500, max_concurrent_tasks=8, model_name="snunlp/bigdata_gemma2_9b_dora"):
-        
+async def summarize(docs, llm, is_vllm, model_name="snunlp/bigdata_gemma2_9b_dora"):
     """HuggingFace LLM으로 비동기적 요약을 실행"""
     if not docs:
         return []
+    max_tokens = 1500
+    max_concurrent_tasks = 8
     summary_length = max_tokens / len(docs)
 
     system_prompt = f"""다음 텍스트를 읽고, {max(int(summary_length/40), 5)}문장 이내로 요약해주세요.
