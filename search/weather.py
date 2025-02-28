@@ -2,12 +2,8 @@ import requests
 import json
 from datetime import datetime, timedelta
 import pandas as pd
+from config import API_URL, ENCODED_SERVICE_KEY
 
-# 기상청 단기예보 조회 API 기본 URL
-API_URL = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst"
-
-# 사용자의 Encoding된 인증키
-ENCODED_SERVICE_KEY = r"w9mjgQS/+xk/bQ8bBCBgr6ZNgAeqLQry7V/zW4bcWKtUpPR+PdbExY/3pWbiFFZnF6TTRtl7jIGduPI5XCoqcg=="
 
 def translate_data(location, data, forcast_day):
     items = data["response"]["body"]["items"]["item"]

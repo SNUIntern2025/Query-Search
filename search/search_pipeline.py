@@ -15,7 +15,6 @@ import threading
 q = ""
 w = ""
 d = ""
-weather_links = ["weawow.com", "korea247.kr", "windy.app"] # 도메인에 "weather" 안 들어간 날씨 사이트들
 lock = threading.Lock()
 
 def extract_place(subquery, flag):
@@ -65,6 +64,7 @@ def filter_link(search_results):
 @timeit
 def crawl_links_parallel(filtered_links, crawler):
     global q
+    weather_links = ["weawow.com", "korea247.kr", "windy.app"] # 도메인에 "weather" 안 들어간 날씨 사이트들
     crawled_data = {}
     weather_data = ""
     link_per_query = max(0, serper.k_num-3) #서브 쿼리 하나당 fetch 해올 url 개수 지정해주기
