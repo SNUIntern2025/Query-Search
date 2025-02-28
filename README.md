@@ -43,7 +43,7 @@ Final Output
      nohup vllm serve snunlp/bigdata_gemma2_9b_dora --dtype auto --tensor-parallel-size 4 --api-key token-snuintern2025 & 
     ```
     
-    - command에 추가 적용할 수 있는 옵션과 관련하여서는 [이 문서](https://www.notion.so/02-18-19d245846c0a808c9784e0fca800dad8?pvs=21)를 참조해주세요.
+    - command에 추가 적용할 수 있는 옵션과 관련하여서는 [이 문서](https://www.notion.so/19d245846c0a808c9784e0fca800dad8?pvs=21)를 참조해주세요.
         - `--enable-prefix-caching` 는 넣는 것을 추천드립니다.
         - `--enable-chunked-prefill`, `--block-size (2, 4, 8, 16, 32까지 지정 가능)`옵션도 나름대로 도움이 될 수도 있을 것 같습니다.
     - 현재 local 호스트, 포트 8000으로 연결해두었습니다. 필요에 따라 변경하시면 됩니다.
@@ -95,6 +95,9 @@ Final Output
     > **return**
     - llm (VLLM) : 로딩이 된 모델. VLLM에 래핑되어 리턴됨
     > 
+    
+- **`handle_exit(llm, signum, fream)`, `normal_exit()`**
+    - 아래 **기타 함수** 참조
 
 # Query Part
 
@@ -322,9 +325,6 @@ Final Output
     > **return**
         json_result (Dict): json으로 변환된 결과
     > 
-    
-- **`process_single_query(query, chain, model_name)`**
-    - 멀티쓰레딩 작업을 삭제하고 batch 단위로 쿼리를 처리하는 작업으로 변경. 따라서 이 함수는 현재 사용하지 않습니다.
 
 # Search Part (자세한 설명은 [채은님 노션](https://www.notion.so/197245846c0a80bcad60d3c10dfd2812?pvs=21)에)
 
@@ -356,6 +356,10 @@ Final Output
                 ]
             ```
             
+
+- global q : get_weather_forecast에서 새로운 링크에 대해 for 문이 iterate 할때마다, 서브쿼리가 이전과 바뀌었는지 판단하기 위한 변수. 만약 서브쿼리가 바뀌면 바뀐 서브쿼리를 이곳에 저장
+- global w: q와 같은 맥락으로, extract_place()에서 추출한 지명을 저장하기 위한 변수
+- weather_links: 도메인에 “weather”가 들어있지 않은 날씨 관련 사이트들의 도메인 정보
 
 ### 함수 설명
 
@@ -395,28 +399,46 @@ Final Output
         ```
         
     
+- 🛠️ **`extract_place(subquery, flag)`**
+    - konlpy 라이브러리를 사용하여 서브쿼리로부터 지명만을 추출
+        - 날씨를 묻는 서브쿼리에서 지명은 보통 앞쪽에 등장한다는 경향 이용
+        - 혹시나 지명 말고 앞에 올 수 있는 단어들에 대한 list_banned를 만들어, 이 리스트에 들어있지 않은 단어여야만 리턴하도록
+    - flag 가 True 일 때만 실행 (flag = 서브쿼리가 이전과 바뀌었는지. 바뀌지 않았다면 이전과 서브쿼리가 같은 것이기에, 다시 지명 추출을 실행하지 않고 이전에 저장된 지명을 리턴함
+    
+    > **args**
+        subquery (str): 지명 추출을 시도할 서브쿼리
+        flag (bool): 저장된 서브쿼리와 새로 들어온 링크가 비롯된 서브쿼리가 다른지. 다르면 True, 같으면 False
+    > 
+    
+    > **return**
+       words: 추출된 지명
+       d: 날짜 관련 정보
+    > 
+    
 - **`filter_link(search_results)`**
+    - 각 링크에 대한 title 앞쪽에 링크가 비롯된 서브쿼리를 붙여줌 (title = f”{subquery}+{title}”)
+    - 중복된 사이트 링크가 들어가지 않도록 Dict를 하나씩 업데이트
     
     > **args**
         search_results (Dict[Dict]): 각 Dict는 각 서브쿼리에 대해 서치해온 링크 및 사이트 제목 정보를 담고 있음
     > 
     
     > **return**
-       filtered_links (List[Dict]): 그 중 링크에 대한 정보만 추출하여 다시 List[Dict]로 리턴
+       filtered_links (Dict): 최종적으로 검색할 전체 링크 및 사이트 제목 정보 목록
     > 
     
 - **`crawl_links_parallel(filtered_links, crawler), crawl_links(filtered_links, crawler)`**
     - serper api가 반환해준 url을 이용하여 크롤링을 실행하는 함수
     - `search/crawler.py`에 있는 `crawl` 함수를 사용하여 크롤링 실행
-    - `crawl_links_parallel` 은 멀티쓰레딩 함수, `crawl_links` 은 해당 멀티쓰레딩 작업을 수행하기 위한 내부 함수
     
     > **args**
-        filtered_links (Dict): 검색 결과 문서 제목과 url이 딕셔너리 형태로 담겨 있는 딕셔너리
+        filtered_links (Dict): 검색 결과 문서 제목과 url이 key-value pair로 담겨 있는 딕셔너리
         crawler (module): 크롤링 모듈. `search/crawler.py` 파일
     > 
     
     > **result**
         final_results (Dict): 타이틀과 크롤링된 텍스트가 담겨 있는 딕셔너리
+        weather_data (str): 날씨 데이터를 크롤링하는 경우, 해당 데이터를 저장하는 str
     > 
     - 예시
         
@@ -427,6 +449,65 @@ Final Output
         >> {"갤럭시 s25 정보 총정리": "이번 달 공개된 갤럭시 s25 출시 스펙, 디자인, 가격까지 총정리...", ...}
         ```
         
+
+## 🛠️`weather.py`
+
+- 기상청 단기예보 API를 이용하여 날씨 데이터를 받아오는 함수가 담겨 있는 파일
+
+- **`translate_data(location, data, forecast_day)`**
+    - 기상청 제공 API 답변 해석 위한 자료
+    
+    [기상청41_단기예보 조회서비스_오픈API활용가이드_241128.docx](attachment:75ad5c00-f9b8-40e9-a405-6aa6f66ee6de:기상청41_단기예보_조회서비스_오픈API활용가이드_241128.docx)
+    
+    > **args**
+    > 
+    > 
+    > `location` : 날씨 정보 가져올 지역 이름
+    > 
+    > `data` : 기상청 API가 가져온 날씨 정보
+    > 
+    > `forecast_day` : 날씨 정보 가져올 날에 대한 추가적 정보
+    > 
+    
+    > **return**
+    > 
+    > 
+    > `text` : 기상청 API가 가져온 날씨 정보를 모델이 이해할 수 있는 텍스트로 풀어서 정리한 텍스트
+    > 
+- **`get_weather_forecast(location, data='오늘')`**
+- @조혜진 / 학생 / 언어학과 ­
+    
+    > **args**
+    > 
+    > 
+    > `location` : 날씨 정보 가져올 지역 이름
+    > 
+    > `data` : 날씨 정보 가져올 날에 대한 추가적 정보
+    > 
+    
+    > **return**
+    > 
+    > 
+    > `f"{location} {date} 날씨 : {result}"` : 지역, 날짜, 날씨 정보를 텍스트 형식으로 리턴
+    > 
+- **`find_coordinates(location, df)`**
+    - 기상청 제공 지역에 대한 x, y 좌표 정보가 담긴 파일
+    
+    [기상청41_단기예보 조회서비스_오픈API활용가이드_격자_위경도(2411).csv](attachment:d5be1704-ab81-4426-b9bc-95a6cf5eebb9:기상청41_단기예보_조회서비스_오픈API활용가이드_격자_위경도(2411).csv)
+    
+    > **args**
+    > 
+    > 
+    > `location` : 날씨 정보 가져올 지역 이름
+    > 
+    > `df` : 지역의 x, y 좌표 정보가 담긴 csv 파일
+    > 
+    
+    > **return**
+    > 
+    > 
+    > location의 x, y 좌표
+    > 
 
 ## `serper.py`
 
@@ -611,7 +692,7 @@ Final Output
 
 ### 함수 설명
 
-- **🚩`summarize(docs, llm, is_vllm, max_tokens, max_concurrent_tasks, model_name)`**
+- **🚩`summarize(docs, llm, is_vllm, model_name)`**
     - 요약할 문서들을 받아 요약한 결과를 반환하는 비동기 함수
     - 크롤링 해 온 문서의 토큰 개수를 센 후 그 개수를 기준으로 그대로 사용할지, 요약할지 결정
     - vllm을 사용하지 않을 경우 ainvoke로 여러 문서를 llm으로 요약하고, 사용할 경우 batch로 여러 문서를 요약함
@@ -625,34 +706,13 @@ Final Output
     > 
     >     is_vllm: vllm 사용 여부
     > 
-    >     max_tokens: Unused
-    > 
-    >     max_concurrent_tasks[int]: 동시에 실행할 최대 요약 작업의 개수
-    > 
     >     model_name[str]: 요약 모델의 이름
     > 
     
     > **return**
         contexts + summaries (List): final_output에 사용할 최종 컨텍스트. 요약 내용을 담은 문자열들이 리스트로 반환됨
     > 
-    
-- **`truncate(doc, count, model_name)`**
-    - 문서의 앞부분을 특정 개수의 토큰만큼 추출하는 함수
-    
-    > **args**
-    > 
-    > 
-    >     doc (str): 태그를 땐 웹 문서
-    > 
-    >     count (int): 추출할 토큰의 개수
-    > 
-    >     model_name(str): 사용할 tokenizer의 모델명
-    > 
-    
-    > **return**
-        tokenizer.decode(tokens) (str): 짧아진 문서
-    > 
-    
+
 - **`summarize_task(doc)`**
     - 개별 문서를 요약하는 비동기 함수.
     - vllm을 사용하지 않을 때만 사용
@@ -679,6 +739,11 @@ Final Output
             - 500,000 credit: $375 ($0.75/1k)
             - 2,500,000 credit: $1250 ($0.50/1k)
             - 12,500,000건: $3750 ($0.30/1k)
+
+## `bad_links_list.py`
+
+- 유튜브, 벅스 등 답변 생성에 오히려 방해가 되는 웹사이트 링크들을 리스트 형태로 담은 파일입니다.
+- 작업하시면서 마음에 안 드는 웹사이트 링크를 넣어주시면 확장 가능합니다.
 
 # Final output part
 
@@ -748,8 +813,20 @@ python app.py
 - 서버로 연결되어 챗봇을 실행할 수 있습니다.
 - 실행 화면
     
-    ![image.png](image.png)
+    ![image.png](attachment:d9d72956-4b83-4886-8baa-e48f42390aec:image.png)
     
+
+## `*_exit` 함수 in `main.py`
+
+- vllm 실행 중 강제 종료를 할 경우, gpu 및 메모리 반납이 정상적으로 되지 않아 프로그램을 바로 다 실행할 경우 파일이 계속 멈춰 있음.
+- 이를 방지하기 위해 정상종료, 강제 종료 시 vllm 메모리 정리 후 process group을 destory 하고 gpu 메모리를 반환하는 작업 필요
+
+### 함수 설명
+
+- **`handle_exit(llm, signum, fream)`**
+    - 강제 종료 시그널 (signum)을 받았을 때 상기 종료 작업을 수행하는 핸들러
+- **`normal_exit()`**
+    - 정상 종료 시 process group을 destory하는 핸들러
 
 ## `requirements.txt`
 
@@ -764,7 +841,7 @@ pip install -r requirements.txt
 
 - 아직 고민 중 / 해결 시도 중인 문제들이 있어 공유드립니다. documentation을 드린 이후에도 저희가 보완할 예정입니다!
 - **치명적인 이슈**
-    - ⚠️ query 처리 결과 json 오류로 실행이 중단되는 문제
+    - ✅ query 처리 결과 json 오류로 실행이 중단되는 문제 **(해결 완료)**
         - 문제: subquery 분해 및 query routing을 LLM이 수행하다보니 적절하지 않은 형식을 뱉을 때 아래와 같은 오류가 발생합니다.
         - 해결: 정규식을 이용하여 보완하는 방안
         
@@ -773,7 +850,7 @@ pip install -r requirements.txt
         json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
         ```
         
-    - ⚠️ 모델 자체의 max length가 짧은 문제
+    - ⚠️ 모델 자체의 max length가 짧은 문제 **(좀 더 고민이 필요함)**
         - 최종 답변이 잘려서 나오거나, 아예 생성이 안 됨.
         - context가 약 22000 토큰으로 길게 주어지면 max length인 8192보다 커져 에러 발생
         - 해결방안 : summarizer.py 보완 예정
@@ -788,7 +865,7 @@ pip install -r requirements.txt
         ```
         
 - **치명적이지 않은 이슈** (성능 저하/저작권 이슈)
-    - ⚠️ 나무위키 전용 크롤링 메서드가 없어서, 성능이 떨어지는 fallback logic이 실행됨
+    - ✅ 나무위키 전용 크롤링 메서드가 없어서, 성능이 떨어지는 fallback logic이 실행됨 **(해결 완료)**
         - **예시:** 전체 문서가 아닌 3.2 단락만 크롤링됨
             
             ```python
@@ -851,11 +928,11 @@ pip install -r requirements.txt
         - **해결:** 나무위키 전용 크롤링 메서드를 만들어보기
             - 나무위키는 크롤링 방지 목적으로 클래스명을 모호하게 짓습니다:
                 
-                ![image.png](image%201.png)
+                ![image.png](attachment:24a41a53-9e6f-4f3f-ba03-05588d2ea17e:image.png)
                 
             - 이 무작위 클래스들은 다행히 길이가 `str[8]` (또는 `str[8]-띄어쓰기-str[8]`)이라는 공통점이 있습니다. 따라서 해당 길이의 클래스를 전부 찾아서, 하이퍼링크와 주석만 적절히 처리하는 방법으로 크롤링을 진행해보면 될 것 같습니다.
         
-    - ⚠️ trafilatura/readability 라이브러리 이후의 fallback logic이 없음
+    - ✅ trafilatura/readability 라이브러리 이후의 fallback logic이 없음 **(해결 완료)**
         
         현재 크롤링 함수는 아래와 같이 되어 있습니다.
         
@@ -898,9 +975,12 @@ pip install -r requirements.txt
             
         - 제가 crawl(url) 함수를 수정하는 방향으로 우선 한번 보겠습니다!
         - 지금 보니 진행을 막을 정도로 fatal한 issue는 아닌 것 같네요..
-    - ⚠️ 직접 찾아보라는 답변을 하는 경우가 존재함.
+    - ✅ 직접 찾아보라는 답변을 하는 경우가 존재함. **(해결 완료)**
         - 문제: search 결과에서 유의미한 내용이 없다고 판단하는 것 같음.
         - 해결 방안 : final_output.py 프롬프트 수정 (진행중)
-    - ⚠️ AI 학습 및 활용을 금지하는 웹사이트의 경우
+    - ⚠️ AI 학습 및 활용을 금지하는 웹사이트의 경우 **(우선은 무시)**
         - 연합뉴스 등의 웹사이트에서 AI 학습 및 활용을 금지한다는 내용을 함께 담고 있음.
         - 해결방안 : crawler.py에서 예외 처리
+    - ⚠️ 파이프라인 내 불필요한 인자
+        
+        문제: 첫 구현 단계에서 파이프라인 전반에 is_vllm 인자가 사용되었으나, 이제는 *거의* 항상 vllm으로 실행하므로 사실상 불필요해짐
