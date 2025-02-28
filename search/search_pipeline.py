@@ -73,7 +73,7 @@ def crawl_links(filtered_links, crawler):
 
 # 병렬 처리 함수
 @timeit
-def crawl_links_parallel(filtered_links, crawler, processed_query):
+def crawl_links_parallel(filtered_links, crawler):
     global q
     crawled_data = {}
     weather_data = ""
@@ -151,7 +151,7 @@ def search_pipeline(processed_query, llm, is_vllm):
     filtered_links = filter_link(search_results) # api 답변에서 링크 추출
 
     print("\n\n==============Crawling Result==============\n")
-    weather_result, final_results = crawl_links_parallel(filtered_links, crawler, processed_query) # 추출된 링크들에서 텍스트 추출
+    weather_result, final_results = crawl_links_parallel(filtered_links, crawler) # 추출된 링크들에서 텍스트 추출
 
     print("\n\n==============Summarization Result==============\n")
     
