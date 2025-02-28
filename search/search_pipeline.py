@@ -6,7 +6,6 @@ import asyncio
 from search.bad_links_list import bad_links
 from search.weather import get_weather_forecast
 from langchain_community.llms import VLLM
-# from vllm import LLM
 from my_utils import timeit
 from urllib.parse import urlparse
 from konlpy.tag import Okt
@@ -134,7 +133,7 @@ def crawl_links_parallel(filtered_links, crawler):
 
 
 @timeit
-def search_pipeline(processed_query, llm, is_vllm):   
+def search_pipeline(processed_query, llm):   
 
     print("\n\n==============Search api Result==============\n")
     search_results = serper.serper_search(processed_query) # api 호출
@@ -150,7 +149,7 @@ def search_pipeline(processed_query, llm, is_vllm):
     else:
         model_name = llm.model
         
-    summarized_results = asyncio.run(summarizer.summarize(list(final_results.values()), llm, is_vllm, model_name=model_name))
+    summarized_results = asyncio.run(summarizer.summarize(list(final_results.values()), llm, model_name=model_name))
     summarized_results.append(weather_result)
     return summarized_results
 

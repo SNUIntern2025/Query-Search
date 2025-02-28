@@ -7,7 +7,6 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 import torch
 from langchain_community.llms import VLLM
 from langchain_huggingface import HuggingFacePipeline
-import argparse
 from my_utils import timeit
 
 def load_vllm(MODEL_NAME):
@@ -25,13 +24,12 @@ def load_vllm(MODEL_NAME):
     return llm
 
 @timeit
-def query_pipeline(query: str, llm, is_vllm :str) -> tuple[list, list[dict]]:
+def query_pipeline(query: str, llm) -> tuple[list, list[dict]]:
     """
     서브쿼리 분해와 쿼리 라우팅을 수행하는 파이프라인
     args:
         query: str, 입력 쿼리
         llm: LangChain.VLLM, 사용할 llm
-        is_vllm: str, vllm 사용 여부 ("true" or "false")
     return:
         subqueries: list, 분해된 서브쿼리
         final_processed_query: list[Dict], 라우팅 최종 처리된 쿼리
@@ -53,7 +51,7 @@ def query_pipeline(query: str, llm, is_vllm :str) -> tuple[list, list[dict]]:
             processed_query.append({'subquery': subquery, 'routing': routing})
 
     # llm-based routing
-    result = prompt_routing(to_llm_subqueries, llm, is_vllm)
+    result = prompt_routing(to_llm_subqueries, llm)
     llm_processed_query = []
     for res in result:
         llm_processed_query.append({'subquery': res['subquery'], 'routing': res['routing']})
@@ -66,9 +64,6 @@ def query_pipeline(query: str, llm, is_vllm :str) -> tuple[list, list[dict]]:
 
 if __name__ == '__main__':
     # 인자 설정
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--vllm', type=str, default='true', help='Using vLLM or not')
-    args = parser.parse_args()
 
     load_func = load_vllm #if args.vllm == 'true' else load_model
 
@@ -80,4 +75,4 @@ if __name__ == '__main__':
     llm = load_func(MODEL_NAME)
 
     query = input("입력 >  ")
-    query_pipeline(query, MODEL_NAME, llm, args.vllm)
+    query_pipeline(query, MODEL_NAME, llm)
