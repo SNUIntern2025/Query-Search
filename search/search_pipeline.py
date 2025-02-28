@@ -22,11 +22,11 @@ def extract_place(subquery, flag):
     global q
     global w
     global d
-    list_banned = ['날씨', '습도', '기온', '평균', '지역', '사용자', '지명', '비', '강수', '예보', '연간', '강수량', \
+    list_banned = {'날씨', '습도', '기온', '평균', '지역', '사용자', '지명', '비', '강수', '예보', '연간', '강수량', \
                    '내일', '현재', '모레', '글피', '어제', '오늘', '주간', '주말', '평일', '주중', '연휴', '아침', '저녁', \
                    '월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일' \
                     '낮', '밤', '시간', '시', '분', '초', '날', '시기', '시점', '시간대', \
-                    '이번', '지난', '저번', '다음']
+                    '이번', '지난', '저번', '다음'}
     date_word = ['내일', '현재', '모레', '글피', '어제', '오늘', '주말', '평일', \
                  '월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일']
     if flag:
@@ -60,16 +60,6 @@ def filter_link(search_results):
         links_dict.update(link)
     return links_dict
 
-
-def crawl_links(filtered_links, crawler):
-    crawled_data = {}
-
-    for title, link in filtered_links.items():
-        text = crawler.crawl(link)  # 크롤링 실행
-        crawled_data[title] = text  # 타이틀과 크롤링된 텍스트를 딕셔너리로 저장
-    final_results = {k: v for k, v in crawled_data.items() if v is not None}
-    
-    return final_results
 
 # 병렬 처리 함수
 @timeit

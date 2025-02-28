@@ -89,7 +89,6 @@ def load_prompt(system_prompt :str, model_name: str, fewshot_ex=None) -> PromptT
     return chat_prompt
 
 
-@timeit
 def get_sub_queries(query: str, llm) -> list[str]:
     '''
     사용자 입력을 받아, 하위 쿼리로 나누어 반환하는 함수

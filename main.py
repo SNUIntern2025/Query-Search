@@ -94,7 +94,7 @@ if __name__ == '__main__':
     parser.add_argument('--vllm', type=str, default='true', help='Using vLLM or not')
     args = parser.parse_args()
     #load_vllm_1 또는 load_vllm_2 선택하여 코드 수정 필요!
-    load_func = load_vllm_1 if args.vllm == 'true' else load_model
+    load_func = load_vllm_2 if args.vllm == 'true' else load_model
 
     #사용 모델
     MODEL_NAME = "snunlp/bigdata_gemma2_9b_dora"

@@ -10,28 +10,6 @@ from langchain_huggingface import HuggingFacePipeline
 import argparse
 from my_utils import timeit
 
-# for not using vllm
-# def load_model(MODEL_NAME):
-#     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-
-#     # for flash attention 2
-#     # model = AutoModelForCausalLM.from_pretrained(
-#     # MODEL_NAME, 
-#     # torch_dtype=torch.float16,
-#     # device_map="auto",
-#     # attn_implementation="flash_attention_2",
-#     # trust_remote_code=True)
-
-#     # for vanilla
-#     model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, torch_dtype=torch.bfloat16, device_map="auto", use_cache=True, trust_remote_code=True)
-#     model.eval()
-#     pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, max_new_tokens=512)
-
-#     # LangChain의 LLM으로 Wrapping
-#     llm = HuggingFacePipeline(pipeline=pipe)
-#     return llm
-
-
 def load_vllm(MODEL_NAME):
     llm = VLLM(
         model=MODEL_NAME,
@@ -45,7 +23,6 @@ def load_vllm(MODEL_NAME):
         vllm_kwargs={"max_model_len": 10000}
         )
     return llm
-
 
 @timeit
 def query_pipeline(query: str, llm, is_vllm :str) -> tuple[list, list[dict]]:

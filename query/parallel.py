@@ -50,27 +50,6 @@ def load_prompt_exaone(system_prompt :str, model_name: str, fewshot_ex=None) -> 
 
     return chat_prompt
 
-def process_single_query(query: str, chain, model_name: str) -> Dict:
-    '''
-    멀티쓰레딩 작업을 batch 작업으로 변경. 따라서 이 함수는 현재 사용하지 않습니다.
-    단일 쿼리를 처리하는 함수
-    query: str, 처리할 단일 쿼리
-    chain: LangChain chain, 사용할 체인
-    '''
-    try:
-        result = chain.invoke({"current_time":datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"user_input":query})
-        result = re.sub(r'```json', '', result)
-        result = result.split(special_tokens[model_name]["assistant_start"])[-1].strip()
-        print(result)
-        return result
-    except Exception as e:
-        print(f"Error processing query '{query}': {str(e)}")
-        return f"""{{
-            "subquery": query,
-            "routing": "web",
-            "reasoning": "Error processing: {str(e)}"
-        }}"""
-
 # 라우팅 결과를 후처리하는 함수
 def post_process_result(subquery, text: str) -> Dict:
     if re.search(r'"routing"\s*:\s*"web"', text):
@@ -80,7 +59,6 @@ def post_process_result(subquery, text: str) -> Dict:
     else:
         return {"subquery": subquery, "routing": "web", "reasoning": "error"}
 
-@timeit
 def prompt_routing(subqueries: List[str], llm, is_vllm):
     '''
     subquery를 받아, LLM prompting을 통해 routing을 병렬로 실행하는 함수
