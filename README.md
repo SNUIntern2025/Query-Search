@@ -51,13 +51,9 @@ Final Output
     - 아래의 코드를 통해 실행 가능
         
         ```bash
-        python main.py --vllm=true
+        python main.py
         ```
         
-    
-    > **인자 설명**
-    - `vllm` : vLLM을 사용할지 말지 결정하는 인자. “true”를 주면 vLLM으로 wrapping 된 채로 실행됩니다.
-    > 
     - 실행 후
         
         ```bash
@@ -68,17 +64,6 @@ Final Output
         
 
 ### 함수 설명
-
-- **`load_model(MODEL_NAME)`**
-    - vLLM을 사용하지 않고 모델을 불러옵니다.
-    
-    > **args**
-        MODEL_NAME (str): 모델 이름. huggingface 모델명이나, 로컬 모델 체크포인트 경로를 입력
-    > 
-    
-    > **return**
-        llm (HuggingFacePipeline) : 로딩이 된 모델. huggingface pipeline에 래핑되어 리턴됨
-    > 
 
 - **`load_vllm_1(MODEL_NAME)`**
     - vLLMOpenAI()를 이용하는 경우로, vLLM을 백엔드 서버로 띄워두고 API를 호출하듯 모델을 사용하는 방식입니다.
@@ -115,7 +100,7 @@ Final Output
 
 ### **함수 설명**
 
-- 🚩 **`query_pipeline(query, llm, is_vllm)`**
+- 🚩 **`query_pipeline(query, llm)`**
     - 쿼리 파트 (서브 쿼리 분해, 쿼리 라우팅) 전체 파이프라인을 수행하는 함수
     - 아래와 같은 로직으로 구성되어 있습니다.
     
@@ -132,8 +117,6 @@ Final Output
     > 
     >     llm (LangChain.VLLM or huggingface.pipeline) 사용할 llm
     > 
-    >     is_vllm (str): vllm 사용 여부 ("true" | "false")
-    > 
     
     > **return**
     > 
@@ -143,22 +126,18 @@ Final Output
     >     final_processed_query (list[Dict]): 서브쿼리 라우팅 결과
     > 
     - 예시
-      
+        
         ```python
-        prompt_routing(["피크민의 정의", "피크민의 특징"], llm, is_vllm)
+        query = "피크민이 뭐야?"
+        query_pipeline(query, llm, args.vllm)
         
-        >> [{"subquery": "피크민의 정의",
-            "reasoning": "피크민의 정의를 알려면 외부 정보가 필요합니다.",
-            "routing": "web"},
-            {"subquery": "피크민의 특징",
-            "reasoning": "피크민의 특징을 알려면 외부 정보가 필요합니다.",
-            "routing": "web"}]
+        >> ["피크민의 정의, 피크민의 특징"],
+           [{"subquery": "피크민의 정의", "routing": "web"},
+            {"subquery": "피크민의 특징", "routing": "web"}]
         ```
-
-        
         
 
-- **`load_model` , `load_vllm`**
+- **`load_vllm`**
     - `main.py` 에 있는 동명의 함수와 기능이 동일합니다. 이 함수들 대신 main.py에 있는 함수만 쓰입니다. 자세한 사항은 [main.py](http://main.pyhttps://www.notion.so/2-19-19d245846c0a805e8589ed59286cec6b?pvs=4#19d245846c0a800eae2bec4168d7d2c9) 참조
 
 ## `query_with_gemma2.py`
@@ -167,7 +146,7 @@ Final Output
 
 ### 인자 설명
 
-- special_tokens (Dict)
+- **`special_tokens`** (Dict)
     - 프롬프트 생성을 위해, 모델마다 통용되는 special token을 저장해놓은 함수.
     - system, user, assistent, example, end token을 저장
 
@@ -242,13 +221,12 @@ Final Output
 
 ### 함수 설명
 
-- 🚩 **`prompt_routing(subqueries: List[str], llm, is_vllm)`**
+- 🚩 **`prompt_routing(subqueries: List[str], llm)`**
     - subquery를 받아, LLM prompting을 통해 routing을 병렬로 실행하는 함수
     
     > **args**
         subqueries (List[str]): 서브쿼리 분해 함수에서 최종적으로 리턴한, 서브쿼리가 들어있는 리스트
         llm: 생성할 때 사용할 llm pipeline
-        is_vllm (str): vllm 사용 여부. 멀티쓰레딩으로 코드가 구현되어 있을 때는 사용했으나 현재는 사용하지 않습니다.
     > 
     
     > **return**
@@ -260,11 +238,11 @@ Final Output
         prompt_routing(["피크민의 정의", "피크민의 특징"], llm, is_vllm)
         
         >> [{"subquery": "피크민의 정의",
-            "routing": "web",
-            "reasoning": "피크민의 정의를 알려면 외부 정보가 필요합니다."},
+            "reasoning": "피크민의 정의를 알려면 외부 정보가 필요합니다.",
+            "routing": "web"},
             {"subquery": "피크민의 특징",
-            "routing": "web",
-            "reasoning": "피크민의 특징을 알려면 외부 정보가 필요합니다."}]
+            "reasoning": "피크민의 특징을 알려면 외부 정보가 필요합니다.",
+            "routing": "web"}]
         ```
         
     
@@ -279,20 +257,7 @@ Final Output
     > **return:**
             chat_prompt (PromptTemplate) : 랭체인에 들어갈 프롬프트
     > 
-    
-- **`load_prompt_exaone(system_prompt, model_name, fewshot_ex)`**
-    - LangChain에 사용할 수 있는 프롬프트를 생성하는 함수 (for EXAONE)
-    
-    > **args**
-            system_prompt (str): 시스템 프롬프트
-            model_name (str): 모델명
-            fewshot_ex (list): few-shot 학습 데이터
-    > 
-    
-    > **return:**
-            chat_prompt (PromptTemplate) : 랭체인에 들어갈 프롬프트
-    > 
-    - 시스템 프롬프트는 query/routing_prompts.py 파일 안에 포함되어 있습니다.
+    - 시스템 프롬프트는 `query/routing_prompts.py` 파일 안에 포함되어 있습니다.
         - 프롬프트 예시
             
             ```python
@@ -311,13 +276,26 @@ Final Output
             
             답변은 오직 아래 예시와 같은 JSON 형식으로 해야 하며, 다른 코드나 내용을 포함해서는 안 된다.
             routing은 인터넷 검색의 필요 여부를 나타낸다. (필요한 경우 "web", 아닐 경우 "none")
-            {{"subquery": "대전 주요 관광지 추천", "routing": "web", "reasoning": "대전의 주요 관광지는 시의성이 크고 신뢰성이 중요하므로, 외부 정보를 필요로 합니다."}}
-            {{"subquery": "지난 주 있었던 지진에 대해 알려줘", "routing": "web", "reasoning": "지난 주 있었던 지진은 시의성이 크므로, 외부 정보를 필요로 합니다."}},
-            {{"subquery": "2x + 4 = 0에서 x는?", "routing": "none", "reasoning": "일차방정식의 풀이는 외부 정보를 필요로 하지 않습니다."}}
+            {{"subquery": "대전 주요 관광지 추천", "reasoning": "대전의 주요 관광지는 시의성이 크고 신뢰성이 중요하므로, 외부 정보를 필요로 합니다.", "routing": "web"}}
+            {{"subquery": "지난 주 있었던 지진에 대해 알려줘", "reasoning": "지난 주 있었던 지진은 시의성이 크므로, 외부 정보를 필요로 합니다.", "routing": "web"}},
+            {{"subquery": "2x + 4 = 0에서 x는?", "reasoning": "일차방정식의 풀이는 외부 정보를 필요로 하지 않습니다.", "routing": "none"}}
             """
             ```
             
-        
+    
+- **`load_prompt_exaone(system_prompt, model_name, fewshot_ex)`**
+    - LangChain에 사용할 수 있는 프롬프트를 생성하는 함수 (for EXAONE)
+    
+    > **args**
+            system_prompt (str): 시스템 프롬프트
+            model_name (str): 모델명
+            fewshot_ex (list): few-shot 학습 데이터
+    > 
+    
+    > **return:**
+            chat_prompt (PromptTemplate) : 랭체인에 들어갈 프롬프트
+    > 
+    
 - **`post_process_result(model_name, text)`**
     - 모델이 반환한 텍스트를 json형식으로 만들기 적합하도록 후처리 하는 함수
     
@@ -330,7 +308,7 @@ Final Output
         json_result (Dict): json으로 변환된 결과
     > 
 
-# Search Part (자세한 설명은 [채은님 노션](https://www.notion.so/197245846c0a80bcad60d3c10dfd2812?pvs=21)에)
+# Search Part
 
 - 경로: `Query+Search_vllm/search`  안의 모든 파일들
 
@@ -361,19 +339,21 @@ Final Output
             ```
             
 
-- global q : get_weather_forecast에서 새로운 링크에 대해 for 문이 iterate 할때마다, 서브쿼리가 이전과 바뀌었는지 판단하기 위한 변수. 만약 서브쿼리가 바뀌면 바뀐 서브쿼리를 이곳에 저장
-- global w: q와 같은 맥락으로, extract_place()에서 추출한 지명을 저장하기 위한 변수
-- weather_links: 도메인에 “weather”가 들어있지 않은 날씨 관련 사이트들의 도메인 정보
+### 인자 설명
+
+- global 변수
+    - `q` : get_weather_forecast에서 새로운 링크에 대해 for 문이 iterate 할때마다, 서브쿼리가 이전과 바뀌었는지 판단하기 위한 변수. 만약 서브쿼리가 바뀌면 바뀐 서브쿼리를 이곳에 저장
+    - `w`: q와 같은 맥락으로, extract_place()에서 추출한 지명을 저장하기 위한 변수
+    - `d`: d와 같은 맥락으로, extract_place()에서 추출한 날짜를 저장하기 위한 변수
 
 ### 함수 설명
 
-- 🚩 **`search_pipeline(processed_query, llm, is_vllm)`**
+- 🚩 **`search_pipeline(processed_query, llm)`**
     - 서브쿼리를 받아 검색을 수행 → 크롤링 → 크롤링 결과 요약을 수행하는 함수
     
     > **args**
         processed_query (List[Dict]): 서브쿼리와 라우팅 결과가 딕셔너리로 들어 있는 리스트
         llm: 생성할 때 사용할 llm pipeline
-        is_vllm: vllm 사용 여부. 멀티쓰레딩을 사용할 때 썼던 인자. 이제는 사용하지 않습니다.
     > 
     
     > **return**
@@ -403,10 +383,11 @@ Final Output
         ```
         
     
-- 🛠️ **`extract_place(subquery, flag)`**
+- **`extract_place(subquery, flag)`**
     - konlpy 라이브러리를 사용하여 서브쿼리로부터 지명만을 추출
         - 날씨를 묻는 서브쿼리에서 지명은 보통 앞쪽에 등장한다는 경향 이용
-        - 혹시나 지명 말고 앞에 올 수 있는 단어들에 대한 list_banned를 만들어, 이 리스트에 들어있지 않은 단어여야만 리턴하도록
+        - 혹시나 지명 말고 앞에 올 수 있는 단어들에 대한 `list_banned`를 만들어, 이 set에 들어있지 않은 단어여야만 리턴하도록
+    - 서브쿼리로 들어온 단어 중 날짜에 대한 단어 (내일, 수요일 등)에 대한 리스트 `date_word` 를 만들어 사용자가 어떤 날짜의 날씨를 알고 싶은지 추출
     - flag 가 True 일 때만 실행 (flag = 서브쿼리가 이전과 바뀌었는지. 바뀌지 않았다면 이전과 서브쿼리가 같은 것이기에, 다시 지명 추출을 실행하지 않고 이전에 저장된 지명을 리턴함
     
     > **args**
@@ -415,8 +396,8 @@ Final Output
     > 
     
     > **return**
-       words: 추출된 지명
-       d: 날짜 관련 정보
+       words (str): 추출된 지명
+       d (str): 예측하고 싶은 날짜
     > 
     
 - **`filter_link(search_results)`**
@@ -466,33 +447,33 @@ Final Output
     > **args**
     > 
     > 
-    > `location` : 날씨 정보 가져올 지역 이름
+    > `location` (str) : 날씨 정보 가져올 지역 이름
     > 
-    > `data` : 기상청 API가 가져온 날씨 정보
+    > `data` (Dict) : 기상청 API가 가져온 날씨 정보
     > 
-    > `forecast_day` : 날씨 정보 가져올 날에 대한 추가적 정보
+    > `forecast_day` (str): 날씨 정보 가져올 날에 대한 추가적 정보
     > 
     
     > **return**
     > 
     > 
-    > `text` : 기상청 API가 가져온 날씨 정보를 모델이 이해할 수 있는 텍스트로 풀어서 정리한 텍스트
+    > `text` (str) : 기상청 API가 가져온 날씨 정보를 모델이 이해할 수 있는 텍스트로 풀어서 정리한 텍스트
     > 
 - **`get_weather_forecast(location, data='오늘')`**
-- @조혜진 / 학생 / 언어학과 ­
     
     > **args**
     > 
     > 
-    > `location` : 날씨 정보 가져올 지역 이름
+    > `location` (str) : 날씨 정보 가져올 지역 이름
     > 
-    > `data` : 날씨 정보 가져올 날에 대한 추가적 정보
+    > `data` (str) : 날씨 정보 가져올 날에 대한 추가적 정보
     > 
     
     > **return**
     > 
     > 
     > `f"{location} {date} 날씨 : {result}"` : 지역, 날짜, 날씨 정보를 텍스트 형식으로 리턴
+    > - result (str): API 호출 결과를 해석한 문자열열
     > 
 - **`find_coordinates(location, df)`**
     - 기상청 제공 지역에 대한 x, y 좌표 정보가 담긴 파일
@@ -502,7 +483,7 @@ Final Output
     > **args**
     > 
     > 
-    > `location` : 날씨 정보 가져올 지역 이름
+    > `location` (str) : 날씨 정보 가져올 지역 이름
     > 
     > `df` : 지역의 x, y 좌표 정보가 담긴 csv 파일
     > 
@@ -510,7 +491,7 @@ Final Output
     > **return**
     > 
     > 
-    > location의 x, y 좌표
+    > x, y (Tuple[int, int]): location의 x, y 좌표
     > 
 
 ## `serper.py`
@@ -609,8 +590,6 @@ Final Output
     > 
     > - 자세한 구조는 위 🚩 `serper_search` 함수 참조
 
-수정하신 내용이 있으시면 보완 부탁드립니다 !
-
 ## `crawler.py`
 
 - 크롤링을 담당하는 모듈입니다. 아래의 함수들로 구성되어 있습니다.
@@ -696,7 +675,7 @@ Final Output
 
 ### 함수 설명
 
-- **🚩`summarize(docs, llm, is_vllm, model_name)`**
+- **🚩`summarize(docs, llm, model_name)`**
     - 요약할 문서들을 받아 요약한 결과를 반환하는 비동기 함수
     - 크롤링 해 온 문서의 토큰 개수를 센 후 그 개수를 기준으로 그대로 사용할지, 요약할지 결정
     - vllm을 사용하지 않을 경우 ainvoke로 여러 문서를 llm으로 요약하고, 사용할 경우 batch로 여러 문서를 요약함
@@ -707,8 +686,6 @@ Final Output
     >     docs (List[str]): 각 str는 태그를 땐 웹 문서를 나타냄
     > 
     >     llm: 생성할 때 사용할 llm
-    > 
-    >     is_vllm: vllm 사용 여부
     > 
     >     model_name[str]: 요약 모델의 이름
     > 
@@ -733,7 +710,11 @@ Final Output
 
 ## `config.py`
 
-- Google Serper API key를 담은 파일입니다.
+- 각종 API key와 주소를 담은 파일입니다.
+    - 현재 Google Serper와 기상청 단기예보 API에 대한 정보가 들어가 있습니다.
+
+### Google Serper
+
 - 채은과 혜진의 key가 들어있는데, 직접 아래 링크에서 key를 발급받으셔서 추가하셔도 되고, 테스트 과정에서는 저희 key를 사용하셔도 됩니다. 만약 사용량 제한이 걸리면 결제가 필요합니다.
     - https://serper.dev/?utm_term=google%20search%20api&gad_source=1&gclid=CjwKCAiAn9a9BhBtEiwAbKg6fk30ZmMhb4MQcdcxZgdE-fqyNDhCq6mmAPt7HCiRbab9q_P2b4ZSFxoCu54QAvD_BwE
     - 가격 정보
@@ -743,6 +724,11 @@ Final Output
             - 500,000 credit: $375 ($0.75/1k)
             - 2,500,000 credit: $1250 ($0.50/1k)
             - 12,500,000건: $3750 ($0.30/1k)
+
+### 기상청 단기예보 API
+
+- api 주소와 key가 들어가 있습니다.
+- 호출 비용은 무료인데, 가끔 호
 
 ## `bad_links_list.py`
 
@@ -983,6 +969,11 @@ pip install -r requirements.txt
         - 문제: search 결과에서 유의미한 내용이 없다고 판단하는 것 같음.
         - 해결 방안 : final_output.py 프롬프트 수정 (진행중)
     - ⚠️ AI 학습 및 활용을 금지하는 웹사이트의 경우 **(우선은 무시)**
+        - 연합뉴스 등의 웹사이트에서 AI 학습 및 활용을 금지한다는 내용을 함께 담고 있음.
+        - 해결방안 : crawler.py에서 예외 처리
+    - ✅ 파이프라인 내 불필요한 인자 (해결 완료)
+        
+        문제: 첫 구현 단계에서 파이프라인 전반에 is_vllm 인자가 사용되었으나, 이제는 *거의* 항상 vllm으로 실행하므로 사실상 불필요해짐
         - 연합뉴스 등의 웹사이트에서 AI 학습 및 활용을 금지한다는 내용을 함께 담고 있음.
         - 해결방안 : crawler.py에서 예외 처리
     - ⚠️ 파이프라인 내 불필요한 인자
